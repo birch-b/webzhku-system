@@ -116,7 +116,7 @@ public class ShopProductServlet extends HttpServlet {
                     if (url != null) { imageUrls.add(url); if (coverImage.isEmpty()) coverImage = url; }
                 }
             }
-            String imagesJson = imageUrls.isEmpty() ? "" : "["" + String.join("","", imageUrls) + ""]";
+            String imagesJson = imageUrls.isEmpty() ? "" : "[\"" + String.join("\",\"", imageUrls) + "\"]";
             if (idStr != null && !idStr.isEmpty()) {
                 StringBuilder updateSql = new StringBuilder("UPDATE product SET name=?, description=?, price=?, stock=?, category_id=?");
                 if (!coverImage.isEmpty()) updateSql.append(", cover_image=?");

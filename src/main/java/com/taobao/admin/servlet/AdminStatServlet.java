@@ -60,7 +60,7 @@ public class AdminStatServlet extends HttpServlet {
             while (rs.next()) { names.add(rs.getString("name")); values.add(rs.getInt("sales")); }
             Map<String, Object> data = new HashMap<>(); data.put("names", names); data.put("values", values);
             resp.getWriter().write(JsonUtil.toJson(data));
-        } catch (Exception e) { e.printStackTrace(); resp.getWriter().write("{"error":"查询失败"}"); }
+        } catch (Exception e) { e.printStackTrace(); resp.getWriter().write("{\"error\":\"查询失败\"}"); }
     }
 
     private void shopRevenue(HttpServletResponse resp) throws IOException {
@@ -73,7 +73,7 @@ public class AdminStatServlet extends HttpServlet {
             while (rs.next()) { names.add(rs.getString("shop_name")); values.add(rs.getDouble("revenue")); }
             Map<String, Object> data = new HashMap<>(); data.put("names", names); data.put("values", values);
             resp.getWriter().write(JsonUtil.toJson(data));
-        } catch (Exception e) { e.printStackTrace(); resp.getWriter().write("{"error":"查询失败"}"); }
+        } catch (Exception e) { e.printStackTrace(); resp.getWriter().write("{\"error\":\"查询失败\"}"); }
     }
 
     private void monthlyOrders(HttpServletResponse resp) throws IOException {
@@ -86,7 +86,7 @@ public class AdminStatServlet extends HttpServlet {
             while (rs.next()) { months.add(rs.getString("month")); counts.add(rs.getInt("count")); }
             Map<String, Object> data = new HashMap<>(); data.put("months", months); data.put("counts", counts);
             resp.getWriter().write(JsonUtil.toJson(data));
-        } catch (Exception e) { e.printStackTrace(); resp.getWriter().write("{"error":"查询失败"}"); }
+        } catch (Exception e) { e.printStackTrace(); resp.getWriter().write("{\"error\":\"查询失败\"}"); }
     }
 
     private void userGrowth(HttpServletResponse resp) throws IOException {
@@ -99,6 +99,6 @@ public class AdminStatServlet extends HttpServlet {
             while (rs.next()) { months.add(rs.getString("month")); counts.add(rs.getInt("count")); }
             Map<String, Object> data = new HashMap<>(); data.put("months", months); data.put("counts", counts);
             resp.getWriter().write(JsonUtil.toJson(data));
-        } catch (Exception e) { e.printStackTrace(); resp.getWriter().write("{"error":"查询失败"}"); }
+        } catch (Exception e) { e.printStackTrace(); resp.getWriter().write("{\"error\":\"查询失败\"}"); }
     }
 }

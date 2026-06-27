@@ -138,7 +138,7 @@ public class AftersaleServlet extends HttpServlet {
     /**
      * 提交售后申请
      */
-    private void submit(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    private void submit(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         HttpSession session = req.getSession();
         Long userId = (Long) session.getAttribute("userId");
         if (userId == null) {

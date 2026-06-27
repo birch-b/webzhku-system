@@ -70,19 +70,7 @@
             <version>2.11.0</version>
         </dependency>
 
-        <!-- CKEditor -->
-        <dependency>
-            <groupId>org.ckeditor</groupId>
-            <artifactId>ckeditor-core</artifactId>
-            <version>4.20.0</version>
-        </dependency>
-
-        <!-- ECharts -->
-        <dependency>
-            <groupId>com.github.abel533</groupId>
-            <artifactId>ECharts</artifactId>
-            <version>3.0.0.6</version>
-        </dependency>
+        <!-- 注：CKEditor / ECharts 仅通过 CDN 引入，无需 Maven 依赖 -->
 
         <!-- Jackson JSON -->
         <dependency>
