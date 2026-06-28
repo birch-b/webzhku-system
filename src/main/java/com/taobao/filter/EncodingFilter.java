@@ -20,8 +20,9 @@ public class EncodingFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
         request.setCharacterEncoding(ENCODING);
+        // 仅设置请求字符编码，不强制设置响应的 Content-Type
+        // 否则会覆盖 CSS/JS/图片等静态资源的正确 MIME 类型
         response.setCharacterEncoding(ENCODING);
-        response.setContentType("text/html;charset=" + ENCODING);
         chain.doFilter(request, response);
     }
 

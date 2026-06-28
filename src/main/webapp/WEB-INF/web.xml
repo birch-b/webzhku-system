@@ -3,41 +3,62 @@
          xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
          version="3.1">
 
-  <filter>
-    <filter-name>EncodingFilter</filter-name>
-    <filter-class>com.taobao.filter.EncodingFilter</filter-class>
-  </filter>
-  <filter-mapping>
-    <filter-name>EncodingFilter</filter-name>
-    <url-pattern>/*</url-pattern>
-  </filter-mapping>
+    <!-- ============ JSP 全局配置（关键！确保 EL 表达式被解析） ============ -->
+    <jsp-config>
+        <jsp-property-group>
+            <url-pattern>*.jsp</url-pattern>
+            <el-ignored>false</el-ignored>
+            <scripting-invalid>false</scripting-invalid>
+            <page-encoding>UTF-8</page-encoding>
+            <default-content-type>text/html; charset=UTF-8</default-content-type>
+            <trim-directive-whitespaces>true</trim-directive-whitespaces>
+        </jsp-property-group>
+    </jsp-config>
 
-  <filter>
-    <filter-name>AuthFilter</filter-name>
-    <filter-class>com.taobao.filter.AuthFilter</filter-class>
-  </filter>
-  <filter-mapping>
-    <filter-name>AuthFilter</filter-name>
-    <url-pattern>/admin/*</url-pattern>
-    <url-pattern>/shop/*</url-pattern>
-    <url-pattern>/customer/*</url-pattern>
-    <url-pattern>/cart/*</url-pattern>
-    <url-pattern>/order/*</url-pattern>
-    <url-pattern>/payment/*</url-pattern>
-    <url-pattern>/review/*</url-pattern>
-    <url-pattern>/aftersale/*</url-pattern>
-  </filter-mapping>
+    <!-- ============ 字符编码过滤器 ============ -->
+    <filter>
+        <filter-name>EncodingFilter</filter-name>
+        <filter-class>com.taobao.filter.EncodingFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>EncodingFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
 
-  <filter>
-    <filter-name>ShopAuthFilter</filter-name>
-    <filter-class>com.taobao.filter.ShopAuthFilter</filter-class>
-  </filter>
-  <filter-mapping>
-    <filter-name>ShopAuthFilter</filter-name>
-    <url-pattern>/shop/*</url-pattern>
-  </filter-mapping>
+    <!-- ============ 权限过滤器 ============ -->
+    <filter>
+        <filter-name>AuthFilter</filter-name>
+        <filter-class>com.taobao.filter.AuthFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>AuthFilter</filter-name>
+        <url-pattern>/admin/*</url-pattern>
+        <url-pattern>/shop/*</url-pattern>
+        <url-pattern>/customer/*</url-pattern>
+        <url-pattern>/cart/*</url-pattern>
+        <url-pattern>/order/*</url-pattern>
+        <url-pattern>/payment/*</url-pattern>
+        <url-pattern>/review/*</url-pattern>
+        <url-pattern>/aftersale/*</url-pattern>
+    </filter-mapping>
 
-  <welcome-file-list>
-    <welcome-file>index</welcome-file>
-  </welcome-file-list>
+    <filter>
+        <filter-name>ShopAuthFilter</filter-name>
+        <filter-class>com.taobao.filter.ShopAuthFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>ShopAuthFilter</filter-name>
+        <url-pattern>/shop/*</url-pattern>
+    </filter-mapping>
+
+    <!-- ============ Session 配置 ============ -->
+    <session-config>
+        <session-timeout>60</session-timeout>
+    </session-config>
+
+    <!-- ============ 欢迎页 ============ -->
+    <welcome-file-list>
+        <welcome-file>index</welcome-file>
+    </welcome-file-list>
+
 </web-app>
