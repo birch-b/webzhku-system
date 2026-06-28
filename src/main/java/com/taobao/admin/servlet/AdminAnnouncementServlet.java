@@ -10,7 +10,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @WebServlet("/admin/announcement/*")
 public class AdminAnnouncementServlet extends HttpServlet {
@@ -39,14 +41,20 @@ public class AdminAnnouncementServlet extends HttpServlet {
 
     private void listAnnouncements(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         try (Connection conn = DBUtil.getConnection()) {
-            PreparedStatement ps = conn.prepareStatement("SELECT * FROM announcement ORDER BY create_time DESC");
+            PreparedStatement ps = conn.prepareStatement(
+                "SELECT id, title, content, priority, status, create_time, update_time, published_at " +
+                "FROM announcement ORDER BY priority DESC, create_time DESC");
             ResultSet rs = ps.executeQuery();
-            List<String[]> announcements = new ArrayList<>();
+            List<Map<String, Object>> announcements = new ArrayList<>();
             while (rs.next()) {
-                announcements.add(new String[]{
-                    String.valueOf(rs.getLong("id")), rs.getString("title"),
-                    rs.getString("content"), rs.getTimestamp("create_time").toString()
-                });
+                Map<String, Object> m = new HashMap<>();
+                m.put("id", rs.getLong("id"));
+                m.put("title", rs.getString("title"));
+                m.put("content", rs.getString("content"));
+                m.put("priority", rs.getInt("priority"));
+                m.put("status", rs.getInt("status"));
+                m.put("createTime", rs.getTimestamp("create_time"));
+                announcements.add(m);
             }
             req.setAttribute("announcements", announcements);
             req.getRequestDispatcher("/admin/announcement_list.jsp").forward(req, resp);
@@ -67,6 +75,7 @@ public class AdminAnnouncementServlet extends HttpServlet {
                     req.setAttribute("annId", rs.getLong("id"));
                     req.setAttribute("annTitle", rs.getString("title"));
                     req.setAttribute("annContent", rs.getString("content"));
+                    req.setAttribute("annPriority", rs.getInt("priority"));
                 }
             } catch (Exception e) { e.printStackTrace(); }
         }
@@ -77,16 +86,23 @@ public class AdminAnnouncementServlet extends HttpServlet {
         String title = req.getParameter("title");
         String content = req.getParameter("content");
         String idStr = req.getParameter("id");
+        String priorityStr = req.getParameter("priority");
+        int priority = (priorityStr != null && !priorityStr.isEmpty()) ? Integer.parseInt(priorityStr) : 0;
         try (Connection conn = DBUtil.getConnection()) {
             if (idStr != null && !idStr.isEmpty()) {
-                PreparedStatement ps = conn.prepareStatement("UPDATE announcement SET title = ?, content = ? WHERE id = ?");
-                ps.setString(1, title); ps.setString(2, content); ps.setLong(3, Long.parseLong(idStr));
+                PreparedStatement ps = conn.prepareStatement(
+                    "UPDATE announcement SET title = ?, content = ?, priority = ?, update_time = NOW() WHERE id = ?");
+                ps.setString(1, title); ps.setString(2, content);
+                ps.setInt(3, priority); ps.setLong(4, Long.parseLong(idStr));
                 ps.executeUpdate();
             } else {
+                // 新公告默认直接发布 status=1
                 PreparedStatement ps = conn.prepareStatement(
-                    "INSERT INTO announcement (title, content, operator_id, create_time) VALUES (?, ?, ?, NOW())");
+                    "INSERT INTO announcement (title, content, operator_id, priority, status, create_time, update_time, published_at) " +
+                    "VALUES (?, ?, ?, ?, 1, NOW(), NOW(), NOW())");
                 ps.setString(1, title); ps.setString(2, content);
                 ps.setLong(3, (Long) req.getSession().getAttribute("userId"));
+                ps.setInt(4, priority);
                 ps.executeUpdate();
             }
             resp.sendRedirect(req.getContextPath() + "/admin/announcement/list?msg=saved");

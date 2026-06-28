@@ -39,7 +39,7 @@ public class AdminLoginServlet extends HttpServlet {
                 HttpSession session = req.getSession();
                 session.setAttribute("user", user);
                 session.setAttribute("userId", user.getId());
-                session.setAttribute("userRole", "operator");
+                session.setAttribute("userRole", "operator"); // 与 LoginServlet 保持一致
                 resp.sendRedirect(req.getContextPath() + "/admin/stat/dashboard");
             } else {
                 req.setAttribute("error", "运营商账号或密码错误");
