@@ -23,6 +23,7 @@ public class LoginServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        // 使用相对路径转发，避免路径解析问题
         req.getRequestDispatcher("/login.jsp").forward(req, resp);
     }
 
@@ -70,21 +71,8 @@ public class LoginServlet extends HttpServlet {
                 session.setAttribute("userId", user.getId());
                 session.setAttribute("userRole", user.getRole());
 
-                // 根据角色跳转到不同页面
-                switch (user.getRole()) {
-                    case "operator":
-                        resp.sendRedirect(req.getContextPath() + "/admin/dashboard");
-                        break;
-                    case "shopkeeper":
-                        resp.sendRedirect(req.getContextPath() + "/shop/home");
-                        break;
-                    case "customer":
-                        resp.sendRedirect(req.getContextPath() + "/");
-                        break;
-                    default:
-                        resp.sendRedirect(req.getContextPath() + "/");
-                        break;
-                }
+                // 登录成功后统一跳转到首页（买家模块以首页为入口）
+                resp.sendRedirect(req.getContextPath() + "/");
             } else {
                 req.setAttribute("error", "用户名或密码错误");
                 req.getRequestDispatcher("/login.jsp").forward(req, resp);

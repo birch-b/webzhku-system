@@ -13,4 +13,3 @@
 <td><span class="status-badge">${p[6]=='1'?'上架':'下架'}</span></td>
 <td><a href="${pageContext.request.contextPath}/shop/product/edit?id=${p[0]}" class="btn btn-info btn-sm">编辑</a>
 <c:if test="${p[6]=='1'}"><a href="${pageContext.request.contextPath}/shop/product/updateStatus?id=${p[0]}&status=2" class="btn btn-warning btn-sm">下架</a></c:if>
-<c:if test="${p[6]=='2'}"><a href="${pageContext.request.contextPath}/shop/product/updateStatus?id=${p[0]}&status=1" class="btn btn-success btn-sm">上架</a></c:if></td></tr></c:forEach></tbody></table></div></div></div></body></html>

@@ -30,41 +30,98 @@ public class ProductViewServlet extends HttpServlet {
 
     private void listProducts(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String categoryId = req.getParameter("categoryId");
+        String sort = req.getParameter("sort");
+        if (sort == null || sort.isEmpty()) sort = "sales";
         int page = PageUtil.getPage(req);
+        int pageSize = 12;
         try (Connection conn = DBUtil.getConnection()) {
+            // 查询总数
+            StringBuilder countSql = new StringBuilder("SELECT COUNT(*) FROM product WHERE status = 1");
+            if (categoryId != null && !categoryId.isEmpty()) countSql.append(" AND category_id = ?");
+            PreparedStatement psCount = conn.prepareStatement(countSql.toString());
+            int idx = 1;
+            if (categoryId != null && !categoryId.isEmpty()) psCount.setLong(idx++, Long.parseLong(categoryId));
+            ResultSet rsCount = psCount.executeQuery();
+            int totalCount = rsCount.next() ? rsCount.getInt(1) : 0;
+            int totalPages = (int) Math.ceil((double) totalCount / pageSize);
+
+            // 排序
+            String orderClause = "sales DESC";
+            switch (sort) {
+                case "price_asc": orderClause = "price ASC"; break;
+                case "price_desc": orderClause = "price DESC"; break;
+                case "newest": orderClause = "publish_time DESC"; break;
+                default: orderClause = "sales DESC"; break;
+            }
+
+            // 查询商品列表
             StringBuilder sql = new StringBuilder("SELECT p.*, s.shop_name FROM product p LEFT JOIN shop s ON p.shop_id = s.id WHERE p.status = 1");
             if (categoryId != null && !categoryId.isEmpty()) sql.append(" AND p.category_id = ?");
-            sql.append(" ORDER BY p.sales DESC LIMIT ?, 20");
+            sql.append(" ORDER BY p.").append(orderClause).append(" LIMIT ?, ?");
             PreparedStatement ps = conn.prepareStatement(sql.toString());
-            int idx = 1;
+            idx = 1;
             if (categoryId != null && !categoryId.isEmpty()) ps.setLong(idx++, Long.parseLong(categoryId));
-            ps.setInt(idx++, (page - 1) * 20);
+            ps.setInt(idx++, (page - 1) * pageSize);
+            ps.setInt(idx++, pageSize);
             ResultSet rs = ps.executeQuery();
             List<String[]> products = new ArrayList<>();
             while (rs.next()) {
                 products.add(new String[]{String.valueOf(rs.getLong("id")), rs.getString("name"),
-                    rs.getString("price"), rs.getString("cover_image"),
-                    String.valueOf(rs.getInt("sales")), rs.getString("shop_name")});
+                        rs.getString("price"), rs.getString("cover_image"),
+                        String.valueOf(rs.getInt("sales")), rs.getString("shop_name")});
             }
-            req.setAttribute("products", products); req.setAttribute("page", page);
+            req.setAttribute("products", products);
+            req.setAttribute("page", page);
+            req.setAttribute("totalPages", totalPages);
+            req.setAttribute("totalCount", totalCount);
+            req.setAttribute("categoryId", categoryId != null ? categoryId : "");
+            req.setAttribute("sort", sort);
             req.getRequestDispatcher("/product_list.jsp").forward(req, resp);
         } catch (Exception e) { e.printStackTrace(); req.getRequestDispatcher("/product_list.jsp").forward(req, resp); }
     }
 
     private void searchProducts(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String keyword = req.getParameter("keyword");
+        String sort = req.getParameter("sort");
+        if (sort == null || sort.isEmpty()) sort = "sales";
+        int page = PageUtil.getPage(req);
+        int pageSize = 12;
         try (Connection conn = DBUtil.getConnection()) {
+            // 查询总数
+            PreparedStatement psCount = conn.prepareStatement(
+                    "SELECT COUNT(*) FROM product WHERE status = 1 AND name LIKE ?");
+            psCount.setString(1, "%" + keyword + "%");
+            ResultSet rsCount = psCount.executeQuery();
+            int totalCount = rsCount.next() ? rsCount.getInt(1) : 0;
+            int totalPages = (int) Math.ceil((double) totalCount / pageSize);
+
+            // 排序
+            String orderClause = "sales DESC";
+            switch (sort) {
+                case "price_asc": orderClause = "price ASC"; break;
+                case "price_desc": orderClause = "price DESC"; break;
+                case "newest": orderClause = "publish_time DESC"; break;
+                default: orderClause = "sales DESC"; break;
+            }
+
             PreparedStatement ps = conn.prepareStatement(
-                "SELECT p.*, s.shop_name FROM product p LEFT JOIN shop s ON p.shop_id = s.id WHERE p.status = 1 AND p.name LIKE ? ORDER BY p.sales DESC LIMIT 20");
+                    "SELECT p.*, s.shop_name FROM product p LEFT JOIN shop s ON p.shop_id = s.id WHERE p.status = 1 AND p.name LIKE ? ORDER BY p." + orderClause + " LIMIT ?, ?");
             ps.setString(1, "%" + keyword + "%");
+            ps.setInt(2, (page - 1) * pageSize);
+            ps.setInt(3, pageSize);
             ResultSet rs = ps.executeQuery();
             List<String[]> products = new ArrayList<>();
             while (rs.next()) {
                 products.add(new String[]{String.valueOf(rs.getLong("id")), rs.getString("name"),
-                    rs.getString("price"), rs.getString("cover_image"),
-                    String.valueOf(rs.getInt("sales")), rs.getString("shop_name")});
+                        rs.getString("price"), rs.getString("cover_image"),
+                        String.valueOf(rs.getInt("sales")), rs.getString("shop_name")});
             }
-            req.setAttribute("products", products); req.setAttribute("keyword", keyword);
+            req.setAttribute("products", products);
+            req.setAttribute("keyword", keyword);
+            req.setAttribute("page", page);
+            req.setAttribute("totalPages", totalPages);
+            req.setAttribute("totalCount", totalCount);
+            req.setAttribute("sort", sort);
             req.getRequestDispatcher("/product_list.jsp").forward(req, resp);
         } catch (Exception e) { e.printStackTrace(); req.getRequestDispatcher("/product_list.jsp").forward(req, resp); }
     }
@@ -73,7 +130,7 @@ public class ProductViewServlet extends HttpServlet {
         long id = Long.parseLong(req.getParameter("id"));
         try (Connection conn = DBUtil.getConnection()) {
             PreparedStatement ps = conn.prepareStatement(
-                "SELECT p.*, s.shop_name, s.id AS shop_id FROM product p LEFT JOIN shop s ON p.shop_id = s.id WHERE p.id = ?");
+                    "SELECT p.*, s.shop_name, s.id AS shop_id FROM product p LEFT JOIN shop s ON p.shop_id = s.id WHERE p.id = ?");
             ps.setLong(1, id); ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 req.setAttribute("prodId", rs.getLong("id")); req.setAttribute("prodName", rs.getString("name"));
@@ -83,12 +140,12 @@ public class ProductViewServlet extends HttpServlet {
                 req.setAttribute("shopName", rs.getString("shop_name"));
             }
             PreparedStatement ps2 = conn.prepareStatement(
-                "SELECT r.*, u.nickname FROM review r LEFT JOIN user u ON r.user_id = u.id WHERE r.product_id = ? AND r.status = 1 ORDER BY r.create_time DESC LIMIT 10");
+                    "SELECT r.*, u.nickname FROM review r LEFT JOIN user u ON r.user_id = u.id WHERE r.product_id = ? AND r.status = 1 ORDER BY r.create_time DESC LIMIT 10");
             ps2.setLong(1, id); ResultSet rs2 = ps2.executeQuery();
             List<String[]> reviews = new ArrayList<>();
             while (rs2.next()) {
                 reviews.add(new String[]{rs2.getString("nickname"), String.valueOf(rs2.getInt("rating")),
-                    rs2.getString("content"), rs2.getString("reply"), rs2.getTimestamp("create_time").toString()});
+                        rs2.getString("content"), rs2.getString("reply"), rs2.getTimestamp("create_time").toString()});
             }
             req.setAttribute("reviews", reviews);
             req.getRequestDispatcher("/product_detail.jsp").forward(req, resp);
