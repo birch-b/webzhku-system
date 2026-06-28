@@ -28,12 +28,11 @@ public class AuthFilter implements Filter {
         HttpServletResponse resp = (HttpServletResponse) response;
         HttpSession session = req.getSession();
 
-        // 允许静态资源和登录注册页面通过
         String uri = req.getRequestURI();
         String contextPath = req.getContextPath();
-        
+
         // 放行静态资源
-        if (uri.endsWith(".css") || uri.endsWith(".js") || uri.endsWith(".png") 
+        if (uri.endsWith(".css") || uri.endsWith(".js") || uri.endsWith(".png")
             || uri.endsWith(".jpg") || uri.endsWith(".jpeg") || uri.endsWith(".gif")
             || uri.endsWith(".ico") || uri.endsWith(".woff") || uri.endsWith(".woff2")
             || uri.endsWith(".ttf") || uri.endsWith(".svg")) {
@@ -41,29 +40,49 @@ public class AuthFilter implements Filter {
             return;
         }
 
-        // 放行登录、注册、公告等公开页面
-        if (uri.contains("/login") || uri.contains("/register") 
-            || uri.contains("/announcement") || uri.contains("/product/list")
-            || uri.contains("/category") || uri.equals(contextPath + "/")
-            || uri.equals(contextPath)) {
+        // 放行运营商独立登录入口（即使未登录也允许访问）
+        if (uri.contains("/admin/login")) {
             chain.doFilter(request, response);
             return;
         }
 
-        // 获取当前用户ID
-        Long userId = (Long) session.getAttribute("userId");
-        if (userId == null) {
-            // 用户未登录，跳转到登录页面
-            resp.sendRedirect(contextPath + "/login.jsp");
+        // 放行公开页面：登录、注册、公告、商品浏览、首页
+        if (uri.contains("/login.jsp") || uri.contains("/login")
+            || uri.contains("/register") || uri.contains("/announcement")
+            || uri.contains("/product/list") || uri.contains("/category")
+            || uri.contains("/product_detail")
+            || uri.equals(contextPath + "/") || uri.equals(contextPath)) {
+            chain.doFilter(request, response);
             return;
         }
 
-        // 获取用户角色
-        String role = (String) session.getAttribute("role");
+        // —— 以下路径需要登录 ——
+        Long userId = (Long) session.getAttribute("userId");
+        String role = (String) session.getAttribute("userRole"); // 与 LoginServlet 统一
+
+        if (userId == null) {
+            // 未登录：根据路径区分登录页
+            if (uri.contains("/admin/")) {
+                resp.sendRedirect(contextPath + "/admin/login");
+            } else {
+                resp.sendRedirect(contextPath + "/login.jsp");
+            }
+            return;
+        }
+
+        // 角色权限检查
+        if (uri.contains("/admin/") && !"operator".equals(role)) {
+            // 非运营商访问运营商后台 -> 403
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN, "无权访问运营商后台");
+            return;
+        }
+        if (uri.contains("/shop/") && !"shopkeeper".equals(role)) {
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN, "无权访问商家后台");
+            return;
+        }
+
         req.setAttribute("userId", userId);
         req.setAttribute("role", role);
-
-        // 继续处理请求
         chain.doFilter(request, response);
     }
 
