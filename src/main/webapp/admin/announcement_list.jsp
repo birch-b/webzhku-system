@@ -80,7 +80,7 @@
                     <span>👁️</span><span>前台预览</span>
                 </a>
                 <div class="ml-auto text-muted">
-                    共 <strong style="color:var(--text-primary)">${announcements == null ? 0 : announcements.size()}</strong> 条公告
+                    共 <strong style="color:#1f2937">${announcements == null ? 0 : announcements.size()}</strong> 条公告
                 </div>
             </div>
 

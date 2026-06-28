@@ -126,7 +126,7 @@
                         <c:forEach var="o" items="${orders}">
                             <tr>
                                 <td>
-                                    <div style="font-family:monospace;font-weight:600;color:var(--primary)">${o.orderNo}</div>
+                                    <div style="font-family:monospace;font-weight:600;color:#667eea">${o.orderNo}</div>
                                 </td>
                                 <td>
                                     <div style="font-weight:500">${o.buyerName}</div>
@@ -135,7 +135,7 @@
                                     <div style="font-weight:500">${o.shopName}</div>
                                 </td>
                                 <td>
-                                    <span style="color:var(--danger);font-weight:700;font-size:15px">￥${o.payAmount}</span>
+                                    <span style="color:#ef4444;font-weight:700;font-size:15px">￥${o.payAmount}</span>
                                 </td>
                                 <td>
                                     <c:choose>

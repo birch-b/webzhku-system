@@ -131,7 +131,7 @@
                                         <span class="star-rating">★ ${s.rating}</span>
                                     </td>
                                     <td style="font-weight:600">${s.totalOrders}</td>
-                                    <td style="color:var(--danger);font-weight:700">￥${s.totalSales}</td>
+                                    <td style="color:#ef4444;font-weight:700">￥${s.totalSales}</td>
                                     <td>
                                         <c:choose>
                                             <c:when test="${s.status == -1}">
