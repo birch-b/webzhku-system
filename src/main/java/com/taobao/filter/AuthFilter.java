@@ -9,10 +9,6 @@ import java.io.IOException;
 /**
  * 统一权限认证过滤器
  * 拦截所有需要登录才能访问的路径，检查用户是否已登录
- * 并将用户角色信息传递给后续处理
- * 
- * @author taobao
- * @version 1.0
  */
 public class AuthFilter implements Filter {
 
@@ -26,63 +22,77 @@ public class AuthFilter implements Filter {
             throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
-        HttpSession session = req.getSession();
+        HttpSession session = req.getSession(false);
 
         String uri = req.getRequestURI();
         String contextPath = req.getContextPath();
+        String path = uri.substring(contextPath.length());
 
         // 放行静态资源
-        if (uri.endsWith(".css") || uri.endsWith(".js") || uri.endsWith(".png")
-            || uri.endsWith(".jpg") || uri.endsWith(".jpeg") || uri.endsWith(".gif")
-            || uri.endsWith(".ico") || uri.endsWith(".woff") || uri.endsWith(".woff2")
-            || uri.endsWith(".ttf") || uri.endsWith(".svg")) {
+        if (path.endsWith(".css") || path.endsWith(".js") || path.endsWith(".png")
+                || path.endsWith(".jpg") || path.endsWith(".jpeg") || path.endsWith(".gif")
+                || path.endsWith(".ico") || path.endsWith(".woff") || path.endsWith(".woff2")
+                || path.endsWith(".ttf") || path.endsWith(".svg")
+                || path.endsWith(".map")) {
             chain.doFilter(request, response);
             return;
         }
 
-        // 放行运营商独立登录入口（即使未登录也允许访问）
-        if (uri.contains("/admin/login")) {
+        // ============ 放行所有登录/注册/登出入口 ============
+        if (path.startsWith("/login") || path.startsWith("/register") || path.startsWith("/logout")) {
             chain.doFilter(request, response);
             return;
         }
 
-        // 放行公开页面：登录、注册、公告、商品浏览、首页
-        if (uri.contains("/login.jsp") || uri.contains("/login")
-            || uri.contains("/register") || uri.contains("/announcement")
-            || uri.contains("/product/list") || uri.contains("/category")
-            || uri.contains("/product_detail")
-            || uri.equals(contextPath + "/") || uri.equals(contextPath)) {
+        // ============ 运营商后台登录页放行 ============
+        if (path.equals("/admin/login") || path.equals("/admin/admin_login.jsp")
+                || path.equals("/admin/logout")) {
             chain.doFilter(request, response);
             return;
         }
 
-        // —— 以下路径需要登录 ——
-        Long userId = (Long) session.getAttribute("userId");
-        String role = (String) session.getAttribute("userRole"); // 与 LoginServlet 统一
+        // ============ 商家开店申请页面放行 ============
+        if (path.equals("/shop/apply") || path.startsWith("/shop/apply")) {
+            chain.doFilter(request, response);
+            return;
+        }
 
-        if (userId == null) {
-            // 未登录：根据路径区分登录页
-            if (uri.contains("/admin/")) {
+        // ============ 公开页面：首页、商品浏览、公告、店铺首页 ============
+        if (path.equals("/") || path.equals("/index") || path.equals("/index.jsp")
+                || path.startsWith("/product/")
+                || path.startsWith("/announcement/")
+                || path.startsWith("/category/")
+                || path.equals("/shop/home") || path.startsWith("/shop/product/")
+                || path.startsWith("/shop/info/")
+                || path.startsWith("/shop/category/")
+                || path.startsWith("/shop/review/")) {
+            chain.doFilter(request, response);
+            return;
+        }
+
+        // ============ 需要登录的检查 ============
+        boolean isLoggedIn = (session != null && session.getAttribute("userId") != null);
+        if (!isLoggedIn) {
+            resp.sendRedirect(contextPath + "/login");
+            return;
+        }
+
+        // ============ 角色检查：/admin/* 只允许 operator ============
+        String userRole = (String) session.getAttribute("userRole");
+        if (path.startsWith("/admin/")) {
+            if (userRole == null || !userRole.equals("operator")) {
                 resp.sendRedirect(contextPath + "/admin/login");
-            } else {
-                resp.sendRedirect(contextPath + "/login.jsp");
+                return;
             }
-            return;
         }
 
-        // 角色权限检查
-        if (uri.contains("/admin/") && !"operator".equals(role)) {
-            // 非运营商访问运营商后台 -> 403
-            resp.sendError(HttpServletResponse.SC_FORBIDDEN, "无权访问运营商后台");
-            return;
-        }
-        if (uri.contains("/shop/") && !"shopkeeper".equals(role)) {
-            resp.sendError(HttpServletResponse.SC_FORBIDDEN, "无权访问商家后台");
-            return;
-        }
+        // ============ 角色检查：/shop/* 只允许 shopkeeper（ShopAuthFilter 会做更细检查） ============
+        // （ShopAuthFilter 会在之后检查店铺状态，这里只保证已登录）
 
-        req.setAttribute("userId", userId);
-        req.setAttribute("role", role);
+        // 将用户信息传递给后续处理
+        req.setAttribute("userId", session.getAttribute("userId"));
+        req.setAttribute("userRole", userRole);
+
         chain.doFilter(request, response);
     }
 

@@ -1,44 +1,498 @@
-body { font-family: "Microsoft YaHei", Arial, sans-serif; }
-.price { color: #ff5000; font-size: 20px; font-weight: bold; }
-.product-card { border: 1px solid #eee; padding: 10px; margin-bottom: 15px; transition: all 0.3s; }
-.product-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
-.sidebar { background: #2c3e50; color: white; min-height: 100vh; padding-top: 20px; }
-.sidebar a { color: #ecf0f1; display: block; padding: 10px 15px; text-decoration: none; border-bottom: 1px solid #34495e; }
-.sidebar a:hover, .sidebar a.active { background: #34495e; color: white; }
-.sidebar h4 { text-align: center; padding: 10px; border-bottom: 2px solid #34495e; }
-.admin-table th { background: #2c3e50; color: white; }
-.status-badge { padding: 3px 8px; border-radius: 3px; font-size: 12px; }
-.status-active { background: #27ae60; color: white; }
-.status-banned { background: #e74c3c; color: white; }
-.navbar-taobao { background: #ff5000; border: none; }
-.navbar-taobao .navbar-brand, .navbar-taobao a { color: white !important; }
+/* ============================================================
+ *  统一设计系统 - style.css
+ *  三种角色共用同一套布局/组件体系，不同配色：
+ *    customer   → 橙红主题  #ff5000
+ *    shopkeeper → 深蓝主题  #2c3e50
+ *    operator   → 紫蓝主题  #667eea
+ *  使用方式：<body data-role="operator"> 或 <body>
+ *  ============================================================ */
 
-/* ==================== 统一消息提示样式 ==================== */
-.alert-dismissible { padding-right: 35px; }
-.alert-dismissible .close { position: absolute; right: 15px; top: 10px; }
+/* ==================== 基础重置 ==================== */
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #2c3e50;
+    background: #f5f7fa;
+}
+a { text-decoration: none; color: inherit; }
+a:hover { text-decoration: underline; }
+img { max-width: 100%; }
 
-/* ==================== 页面布局辅助 ==================== */
-.page-container { padding-top: 50px; min-height: calc(100vh - 100px); }
-.panel-title-icon { margin-right: 8px; }
+/* ==================== 主题色 - 顾客 (默认) ==================== */
+:root,
+body[data-role="customer"] {
+    --primary: #ff5000;
+    --primary-dark: #e4393c;
+    --primary-light: #ffe4d9;
+    --accent: #ff9500;
+}
 
-/* ==================== 表格样式增强 ==================== */
-.table-hover tbody tr:hover { cursor: pointer; }
-.table-actions .btn { margin-right: 5px; }
+/* ==================== 主题色 - 商家 ==================== */
+body[data-role="shopkeeper"] {
+    --primary: #2c3e50;
+    --primary-dark: #1a252f;
+    --primary-light: #e8f0f5;
+    --accent: #3498db;
+}
 
-/* ==================== 表单样式增强 ==================== */
-.form-section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
-.form-section-title { font-weight: bold; margin-bottom: 15px; color: #333; }
-.has-error .help-block { color: #e74c3c; }
+/* ==================== 主题色 - 运营商 ==================== */
+body[data-role="operator"] {
+    --primary: #667eea;
+    --primary-dark: #764ba2;
+    --primary-light: #e8eaf6;
+    --accent: #9c27b0;
+}
 
-/* ==================== 状态标签颜色 ==================== */
-.label-success { background-color: #5cb85c; }
-.label-warning { background-color: #f0ad4e; }
-.label-danger { background-color: #d9534f; }
-.label-info { background-color: #5bc0de; }
-.label-default { background-color: #777; }
+/* ==================== 统一颜色变量 ==================== */
+:root {
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #3b82f6;
+    --muted: #94a3b8;
+    --border: #e2e8f0;
+    --bg: #ffffff;
+    --bg-alt: #f8fafc;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --radius: 8px;
+    --radius-sm: 4px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.05);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.1), 0 5px 10px rgba(0,0,0,0.05);
+}
 
-/* ==================== 侧边栏菜单激活状态 ==================== */
-.nav-pills > li.active > a,
-.nav-pills > li.active > a:hover,
-.nav-pills > li.active > a:focus { background-color: #ff5000; }
-.nav-pills > li > a:hover { background-color: #ffe4d9; }
+/* ==================== 顶部导航栏 ==================== */
+.navbar {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 0;
+    margin: 0;
+    padding: 12px 20px;
+    box-shadow: var(--shadow);
+    min-height: 56px;
+}
+.navbar .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+.navbar-brand {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff !important;
+    margin-right: 24px;
+}
+.navbar-nav {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.navbar-nav a {
+    color: rgba(255,255,255,0.92) !important;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    transition: background 0.2s;
+    text-decoration: none;
+}
+.navbar-nav a:hover {
+    background: rgba(255,255,255,0.18);
+    text-decoration: none;
+}
+.navbar-right { margin-left: auto; }
+
+/* ==================== 下拉菜单 ==================== */
+.dropdown { position: relative; }
+.dropdown > a { cursor: pointer; }
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    list-style: none;
+    padding: 6px 0;
+    min-width: 180px;
+    z-index: 1000;
+    display: none;
+    margin-top: 4px;
+}
+.dropdown:hover .dropdown-menu,
+.dropdown.open .dropdown-menu { display: block; }
+.dropdown-menu li { display: block; }
+.dropdown-menu a {
+    display: block;
+    padding: 8px 16px;
+    color: var(--text) !important;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.dropdown-menu a:hover {
+    background: var(--primary-light);
+    color: var(--primary-dark) !important;
+}
+.dropdown-menu .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 6px 0;
+}
+
+/* ==================== 布局容器 ==================== */
+.page-container {
+    padding: 24px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: calc(100vh - 120px);
+}
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--primary);
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.page-header h1, .page-header h2, .page-header h3 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+/* ==================== 卡片 ==================== */
+.card {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+.card-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+}
+.card-title-icon { margin-right: 8px; }
+
+/* ==================== 按钮 ==================== */
+.btn {
+    display: inline-block;
+    padding: 8px 18px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+    line-height: 1.4;
+}
+.btn:hover { text-decoration: none; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+.btn-lg { padding: 12px 28px; font-size: 16px; }
+
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-dark); color: #fff; }
+.btn-default { background: #fff; color: var(--text); border: 1px solid var(--border); }
+.btn-default:hover { background: var(--bg-alt); }
+.btn-success { background: var(--success); color: #fff; }
+.btn-warning { background: var(--warning); color: #fff; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-info { background: var(--info); color: #fff; }
+.btn-block { width: 100%; display: block; text-align: center; }
+
+/* ==================== 表单 ==================== */
+.form-group { margin-bottom: 16px; }
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    color: var(--text);
+}
+.form-control {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    transition: border-color 0.2s;
+}
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+textarea.form-control { min-height: 100px; resize: vertical; }
+.form-section { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+.form-section-title { font-weight: 600; margin-bottom: 16px; color: var(--text); font-size: 15px; }
+
+/* ==================== 表格 ==================== */
+.table {
+    width: 100%;
+    background: #fff;
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    border-collapse: collapse;
+}
+.table thead { background: var(--primary); }
+.table thead th {
+    padding: 12px 14px;
+    color: #fff;
+    font-weight: 600;
+    text-align: left;
+    font-size: 13px;
+}
+.table tbody td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+}
+.table tbody tr:last-child td { border-bottom: none; }
+.table tbody tr:hover { background: var(--primary-light); }
+.table-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.table-actions .btn { margin-right: 0; }
+
+/* ==================== Badge / 状态徽章 ==================== */
+.badge, .status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.5;
+}
+.badge-success, .status-active, .label-success { background: var(--success); color: #fff; }
+.badge-warning, .label-warning { background: var(--warning); color: #fff; }
+.badge-danger, .status-banned, .label-danger { background: var(--danger); color: #fff; }
+.badge-info, .label-info { background: var(--info); color: #fff; }
+.badge-default, .label-default { background: var(--muted); color: #fff; }
+.badge-primary { background: var(--primary); color: #fff; }
+
+/* ==================== 消息提示 / Alert ==================== */
+.alert {
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+    border: 1px solid transparent;
+}
+.alert-danger { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+.alert-success { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+.alert-warning { background: #fffbeb; color: #854d0e; border-color: #fde68a; }
+.alert-info { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+
+/* ==================== 侧边栏布局 (后台通用) ==================== */
+.app-layout {
+    display: flex;
+    min-height: 100vh;
+    background: #f5f7fa;
+}
+.app-sidebar {
+    width: 220px;
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.08);
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+}
+.app-sidebar .sidebar-brand {
+    padding: 20px 16px;
+    font-size: 17px;
+    font-weight: 700;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    letter-spacing: 0.5px;
+}
+.app-sidebar a {
+    display: block;
+    padding: 12px 20px;
+    color: rgba(255,255,255,0.92);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    transition: all 0.2s;
+    text-decoration: none;
+    font-size: 14px;
+}
+.app-sidebar a:hover,
+.app-sidebar a.active {
+    background: var(--primary-dark);
+    color: #fff;
+    text-decoration: none;
+    padding-left: 26px;
+}
+.app-main {
+    flex: 1;
+    padding: 24px 28px;
+    min-width: 0;
+}
+
+/* ==================== KPI 指标卡 (仪表盘通用) ==================== */
+.kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+}
+.kpi-card {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    border-top: 3px solid var(--primary);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+.kpi-label { color: var(--text-secondary); font-size: 13px; margin-bottom: 8px; }
+.kpi-value { font-size: 28px; font-weight: 700; color: var(--text); }
+.kpi-value.small { font-size: 22px; }
+.kpi-trend { margin-top: 8px; font-size: 12px; color: var(--success); }
+
+/* ==================== 搜索 / 筛选区域 ==================== */
+.filter-bar {
+    background: #fff;
+    padding: 16px 20px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+}
+.filter-bar .row {
+    display: flex;
+    gap: 14px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+.filter-bar .form-group { margin-bottom: 0; flex: 1; min-width: 150px; }
+
+/* ==================== 商品卡片 ==================== */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+}
+.product-card {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 12px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.product-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+.product-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+}
+.product-card .name {
+    font-size: 14px;
+    margin: 10px 0 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text);
+}
+.product-card .price {
+    color: var(--primary);
+    font-size: 18px;
+    font-weight: 700;
+}
+
+/* ==================== 轮播/公告栏 ==================== */
+.announcement-bar {
+    background: var(--primary-light);
+    padding: 12px 20px;
+    text-align: center;
+    color: var(--primary-dark);
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+}
+.announcement-bar a {
+    color: var(--primary-dark);
+    font-weight: 600;
+    margin: 0 8px;
+}
+
+/* ==================== 分类导航 ==================== */
+.category-nav { margin: 20px 0; display: flex; gap: 8px; flex-wrap: wrap; }
+.category-nav a {
+    display: inline-block;
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: #fff;
+    color: var(--text);
+    transition: all 0.2s;
+    text-decoration: none;
+}
+.category-nav a:hover,
+.category-nav a.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+    text-decoration: none;
+}
+
+/* ==================== 价格文字 ==================== */
+.price { color: var(--primary); font-size: 20px; font-weight: 700; }
+
+/* ==================== 页脚 ==================== */
+.app-footer {
+    background: #fff;
+    border-top: 1px solid var(--border);
+    padding: 20px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+/* ==================== 响应式 ==================== */
+@media (max-width: 768px) {
+    .navbar .container { flex-direction: column; align-items: stretch; }
+    .navbar-nav { flex-wrap: wrap; justify-content: center; }
+    .navbar-right { margin-left: 0; justify-content: center; }
+    .app-layout { flex-direction: column; }
+    .app-sidebar { width: 100%; height: auto; position: static; }
+    .app-main { padding: 16px; }
+    .product-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+    .kpi-value { font-size: 22px; }
+}
+
+/* ==================== Glyphicon 兼容 ==================== */
+.glyphicon {
+    display: inline-block;
+    font-style: normal;
+    margin-right: 4px;
+}
+.glyphicon-shopping-cart::before { content: "🛒"; }
+.glyphicon-list::before { content: "📋"; }
+.glyphicon-user::before { content: "👤"; }

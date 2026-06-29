@@ -19,15 +19,17 @@ public class CartServlet extends HttpServlet {
         Long userId = (Long) req.getSession().getAttribute("userId");
         try (Connection conn = DBUtil.getConnection()) {
             PreparedStatement ps = conn.prepareStatement(
-                "SELECT ci.*, p.name, p.price, p.cover_image, p.stock FROM cart_item ci LEFT JOIN product p ON ci.product_id = p.id WHERE ci.user_id = ? ORDER BY ci.create_time DESC");
+                    "SELECT ci.*, p.name, p.price, p.cover_image, p.stock, p.status AS pstatus FROM cart_item ci LEFT JOIN product p ON ci.product_id = p.id WHERE ci.user_id = ? ORDER BY ci.create_time DESC");
             ps.setLong(1, userId); ResultSet rs = ps.executeQuery();
             List<String[]> cartItems = new ArrayList<>(); double totalAmount = 0;
             while (rs.next()) {
                 int qty = rs.getInt("quantity"); double price = rs.getDouble("price");
-                totalAmount += qty * price;
+                int selected = rs.getInt("selected");
+                if (selected == 1) totalAmount += qty * price;
                 cartItems.add(new String[]{String.valueOf(rs.getLong("id")), String.valueOf(rs.getLong("product_id")),
-                    rs.getString("name"), rs.getString("price"), String.valueOf(qty),
-                    String.valueOf(qty * price), rs.getString("cover_image"), String.valueOf(rs.getInt("selected"))});
+                        rs.getString("name"), rs.getString("price"), String.valueOf(qty),
+                        String.valueOf(qty * price), rs.getString("cover_image"), String.valueOf(selected),
+                        String.valueOf(rs.getInt("stock")), String.valueOf(rs.getInt("pstatus"))});
             }
             req.setAttribute("cartItems", cartItems); req.setAttribute("totalAmount", totalAmount);
             req.getRequestDispatcher("/cart.jsp").forward(req, resp);
@@ -42,6 +44,7 @@ public class CartServlet extends HttpServlet {
             case "/update": updateCart(req, resp); break;
             case "/delete": deleteCart(req, resp); break;
             case "/selectAll": selectAll(req, resp); break;
+            case "/toggle": toggleSelect(req, resp); break;
             default: doGet(req, resp);
         }
     }
@@ -52,6 +55,16 @@ public class CartServlet extends HttpServlet {
         int quantity = 1;
         try { quantity = Integer.parseInt(req.getParameter("quantity")); } catch (Exception e) {}
         try (Connection conn = DBUtil.getConnection()) {
+            // 检查商品状态和库存
+            PreparedStatement psCheck = conn.prepareStatement("SELECT status, stock FROM product WHERE id = ?");
+            psCheck.setLong(1, productId); ResultSet rsCheck = psCheck.executeQuery();
+            if (rsCheck.next()) {
+                if (rsCheck.getInt("status") != 1) {
+                    resp.sendRedirect(req.getContextPath() + "/product/detail?id=" + productId + "&msg=offshelf");
+                    return;
+                }
+                if (quantity > rsCheck.getInt("stock")) quantity = rsCheck.getInt("stock");
+            }
             PreparedStatement ps1 = conn.prepareStatement("SELECT id, quantity FROM cart_item WHERE user_id=? AND product_id=?");
             ps1.setLong(1, userId); ps1.setLong(2, productId); ResultSet rs = ps1.executeQuery();
             if (rs.next()) {
@@ -59,7 +72,7 @@ public class CartServlet extends HttpServlet {
                 ps2.setInt(1, quantity); ps2.setLong(2, rs.getLong("id")); ps2.executeUpdate();
             } else {
                 PreparedStatement ps3 = conn.prepareStatement(
-                    "INSERT INTO cart_item (user_id, product_id, quantity, selected, create_time) VALUES (?, ?, ?, 1, NOW())");
+                        "INSERT INTO cart_item (user_id, product_id, quantity, selected, create_time) VALUES (?, ?, ?, 1, NOW())");
                 ps3.setLong(1, userId); ps3.setLong(2, productId); ps3.setInt(3, quantity); ps3.executeUpdate();
             }
             resp.sendRedirect(req.getContextPath() + "/cart/list");
@@ -96,6 +109,15 @@ public class CartServlet extends HttpServlet {
         try (Connection conn = DBUtil.getConnection()) {
             PreparedStatement ps = conn.prepareStatement("UPDATE cart_item SET selected = ? WHERE user_id = ?");
             ps.setInt(1, selected); ps.setLong(2, userId); ps.executeUpdate();
+            resp.sendRedirect(req.getContextPath() + "/cart/list");
+        } catch (Exception e) { e.printStackTrace(); resp.sendError(500); }
+    }
+
+    private void toggleSelect(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        long cartId = Long.parseLong(req.getParameter("id"));
+        try (Connection conn = DBUtil.getConnection()) {
+            PreparedStatement ps = conn.prepareStatement("UPDATE cart_item SET selected = IF(selected=1, 0, 1) WHERE id = ?");
+            ps.setLong(1, cartId); ps.executeUpdate();
             resp.sendRedirect(req.getContextPath() + "/cart/list");
         } catch (Exception e) { e.printStackTrace(); resp.sendError(500); }
     }
