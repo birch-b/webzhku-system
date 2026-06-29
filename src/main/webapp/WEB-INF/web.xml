@@ -35,10 +35,12 @@
     <jsp-config>
         <jsp-property-group>
             <url-pattern>*.jsp</url-pattern>
+            <el-ignored>false</el-ignored>
             <page-encoding>UTF-8</page-encoding>
+            <default-content-type>text/html; charset=UTF-8</default-content-type>
         </jsp-property-group>
     </jsp-config>
     <welcome-file-list>
-        <welcome-file>index</welcome-file>
+        <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
 </web-app>

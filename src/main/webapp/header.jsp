@@ -1,47 +1,71 @@
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
-<nav class="navbar navbar-inverse navbar-static-top">
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%
+    Object userIdObj = session.getAttribute("userId");
+    Object userRoleObj = session.getAttribute("userRole");
+    Object userObj = session.getAttribute("user");
+
+    boolean loggedIn = userIdObj != null;
+    String role = userRoleObj != null ? userRoleObj.toString() : "";
+    String nickname = "";
+    if (userObj != null) {
+        try {
+            java.lang.reflect.Method m = userObj.getClass().getMethod("getNickname");
+            Object n = m.invoke(userObj);
+            if (n != null) nickname = n.toString();
+        } catch (Exception ignored) {}
+    }
+    if (nickname.isEmpty() && userObj != null) {
+        try {
+            java.lang.reflect.Method m = userObj.getClass().getMethod("getUsername");
+            Object n = m.invoke(userObj);
+            if (n != null) nickname = n.toString();
+        } catch (Exception ignored) {}
+    }
+    if (nickname.isEmpty()) nickname = "用户";
+%>
+<nav class="navbar">
     <div class="container">
-        <div class="navbar-header">
-            <a class="navbar-brand" href="${pageContext.request.contextPath}/">淘宝购物系统</a>
-        </div>
-        <div class="collapse navbar-collapse">
-            <ul class="nav navbar-nav">
-                <li><a href="${pageContext.request.contextPath}/">首页</a></li>
-                <li><a href="${pageContext.request.contextPath}/product/list">全部商品</a></li>
-            </ul>
-            <ul class="nav navbar-nav navbar-right">
-                <c:choose>
-                    <%-- 未登录状态 --%>
-                    <c:when test="${empty sessionScope.userId}">
-                        <li><a href="${pageContext.request.contextPath}/login">登录</a></li>
-                        <li><a href="${pageContext.request.contextPath}/register">注册</a></li>
-                    </c:when>
-                    <%-- 已登录状态 --%>
-                    <c:otherwise>
-                        <li><a href="${pageContext.request.contextPath}/cart/list">
-                            <span class="glyphicon glyphicon-shopping-cart"></span> 购物车
-                        </a></li>
-                        <li><a href="${pageContext.request.contextPath}/order/list">
-                            <span class="glyphicon glyphicon-list"></span> 我的订单
-                        </a></li>
-                        <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                <span class="glyphicon glyphicon-user"></span>
-                                ${not empty sessionScope.nickname ? sessionScope.nickname : sessionScope.user.username}
-                                <span class="caret"></span>
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a href="${pageContext.request.contextPath}/customer/profile">个人中心</a></li>
-                                <li><a href="${pageContext.request.contextPath}/address/list">收货地址</a></li>
-                                <li><a href="${pageContext.request.contextPath}/aftersale">售后记录</a></li>
-                                <li role="separator" class="divider"></li>
-                                <li><a href="${pageContext.request.contextPath}/logout">退出登录</a></li>
-                            </ul>
-                        </li>
-                    </c:otherwise>
-                </c:choose>
-            </ul>
-        </div>
+        <a class="navbar-brand" href="<%=request.getContextPath()%>/">淘宝购物系统</a>
+        <ul class="navbar-nav">
+            <li><a href="<%=request.getContextPath()%>/">首页</a></li>
+            <li><a href="<%=request.getContextPath()%>/product/list">全部商品</a></li>
+            <% if ("operator".equals(role)) { %>
+                <li><a href="<%=request.getContextPath()%>/admin/stat/dashboard">后台管理</a></li>
+            <% } else if ("shopkeeper".equals(role)) { %>
+                <li><a href="<%=request.getContextPath()%>/shop/home">商家后台</a></li>
+            <% } %>
+        </ul>
+        <ul class="navbar-nav navbar-right">
+            <% if (!loggedIn) { %>
+                <li><a href="<%=request.getContextPath()%>/login">登录</a></li>
+                <li><a href="<%=request.getContextPath()%>/register">注册</a></li>
+            <% } else { %>
+                <% if ("customer".equals(role)) { %>
+                    <li><a href="<%=request.getContextPath()%>/cart/list">🛒 购物车</a></li>
+                    <li><a href="<%=request.getContextPath()%>/order/list">📋 我的订单</a></li>
+                <% } %>
+                <li class="dropdown">
+                    <a href="#">👤 <%=nickname%> ▾</a>
+                    <ul class="dropdown-menu">
+                        <% if ("customer".equals(role)) { %>
+                            <li><a href="<%=request.getContextPath()%>/customer/profile">个人中心</a></li>
+                            <li><a href="<%=request.getContextPath()%>/address/list">收货地址</a></li>
+                            <li><a href="<%=request.getContextPath()%>/aftersale">售后记录</a></li>
+                        <% } else if ("shopkeeper".equals(role)) { %>
+                            <li><a href="<%=request.getContextPath()%>/shop/info/view">店铺信息</a></li>
+                            <li><a href="<%=request.getContextPath()%>/shop/product/list">商品管理</a></li>
+                            <li><a href="<%=request.getContextPath()%>/shop/order/list">订单管理</a></li>
+                        <% } else if ("operator".equals(role)) { %>
+                            <li><a href="<%=request.getContextPath()%>/admin/stat/dashboard">数据概览</a></li>
+                            <li><a href="<%=request.getContextPath()%>/admin/user/list">用户管理</a></li>
+                            <li><a href="<%=request.getContextPath()%>/admin/shop/auditList">店铺审核</a></li>
+                            <li><a href="<%=request.getContextPath()%>/admin/order/list">订单监控</a></li>
+                        <% } %>
+                        <li role="separator" class="divider"></li>
+                        <li><a href="<%=request.getContextPath()%>/logout">退出登录</a></li>
+                    </ul>
+                </li>
+            <% } %>
+        </ul>
     </div>
 </nav>
-

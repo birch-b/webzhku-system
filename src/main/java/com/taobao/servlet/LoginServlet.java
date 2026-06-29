@@ -71,8 +71,18 @@ public class LoginServlet extends HttpServlet {
                 session.setAttribute("userId", user.getId());
                 session.setAttribute("userRole", user.getRole());
 
-                // 登录成功后统一跳转到首页（买家模块以首页为入口）
-                resp.sendRedirect(req.getContextPath() + "/");
+                // 根据用户角色自动跳转到对应的工作台
+                String role = user.getRole();
+                if ("operator".equals(role)) {
+                    // 运营商 → 后台仪表盘
+                    resp.sendRedirect(req.getContextPath() + "/admin/stat/dashboard");
+                } else if ("shopkeeper".equals(role)) {
+                    // 商家 → 商家后台
+                    resp.sendRedirect(req.getContextPath() + "/shop/home");
+                } else {
+                    // 普通顾客 → 首页
+                    resp.sendRedirect(req.getContextPath() + "/");
+                }
             } else {
                 req.setAttribute("error", "用户名或密码错误");
                 req.getRequestDispatcher("/login.jsp").forward(req, resp);
