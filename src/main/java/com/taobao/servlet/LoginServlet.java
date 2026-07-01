@@ -70,6 +70,7 @@ public class LoginServlet extends HttpServlet {
                 session.setAttribute("user", user);
                 session.setAttribute("userId", user.getId());
                 session.setAttribute("userRole", user.getRole());
+                session.setAttribute("nickname", user.getNickname() != null ? user.getNickname() : user.getUsername());
 
                 // 根据用户角色自动跳转到对应的工作台
                 String role = user.getRole();
