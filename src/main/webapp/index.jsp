@@ -1,14 +1,36 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"
-         import="java.util.List, java.util.Map" %>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" import="java.util.List,java.lang.reflect.Method" %>
 <%
     String ctx = request.getContextPath();
-    // 读取 session 信息（角色判断）
     Object userRole = session.getAttribute("userRole");
-    Object user = session.getAttribute("user");
-    boolean isCustomer = user != null && "customer".equals(userRole != null ? userRole.toString() : "");
-
-    // 处理 categoryId 的 active 判断
+    Object userObj = session.getAttribute("user");
+    boolean isCustomer = userObj != null && "customer".equals(userRole != null ? userRole.toString() : "");
     String paramCategoryId = request.getParameter("categoryId");
+
+    // 工具方法：从对象中通过 getter 取属性
+    // 注意：这里直接在页面内用反射，避免额外依赖
+    // helper function via inline
+%>
+<%!
+    // JSP 声明：辅助方法（对本文件内所有 scriptlet 可见）
+    public String getProperty(Object obj, String propName) {
+        if (obj == null) return "";
+        try {
+            // 尝试 getXxx()
+            String getter = "get" + Character.toUpperCase(propName.charAt(0)) + propName.substring(1);
+            Method m = obj.getClass().getMethod(getter);
+            Object val = m.invoke(obj);
+            return val == null ? "" : val.toString();
+        } catch (Exception e1) {
+            // 尝试直接 get_property_name (下划线风格)
+            try {
+                Method m = obj.getClass().getMethod("get_" + propName);
+                Object val = m.invoke(obj);
+                return val == null ? "" : val.toString();
+            } catch (Exception e2) {
+                return "";
+            }
+        }
+    }
 %>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -38,18 +60,21 @@
     <!-- 公告栏 -->
     <%
         Object announcements = request.getAttribute("announcements");
-        if (announcements instanceof List && !((List<?>) announcements).isEmpty()) {
+        if (announcements instanceof List && !((List) announcements).isEmpty()) {
     %>
-        <div class="announcement-bar">
+    <div class="announcement-bar">
     <%
-            for (Object annObj : (List<?>) announcements) {
-                pageContext.setAttribute("ann", annObj);
+            List annList = (List) announcements;
+            for (int i = 0; i < annList.size(); i++) {
+                Object ann = annList.get(i);
+                String id = getProperty(ann, "id");
+                String title = getProperty(ann, "title");
     %>
-                <span>📢 <a href="<%=ctx%>/announcement/detail?id=${ann.id}">${ann.title}</a>&nbsp;&nbsp;|&nbsp;&nbsp;</span>
+        <span><a href="<%=ctx%>/announcement/detail?id=<%=id%>"><%=title%></a>&nbsp;&nbsp;|&nbsp;&nbsp;</span>
     <%
             }
     %>
-        </div>
+    </div>
     <%
         }
     %>
@@ -76,23 +101,14 @@
     <%
         Object categories = request.getAttribute("categories");
         if (categories instanceof List) {
-            for (Object catObj : (List<?>) categories) {
-                pageContext.setAttribute("cat", catObj);
-                // 获取 id
-                String idStr = "";
-                String nameStr = "";
-                try {
-                    java.lang.reflect.Method mId = catObj.getClass().getMethod("getId");
-                    Object idVal = mId.invoke(catObj);
-                    if (idVal != null) idStr = idVal.toString();
-                    java.lang.reflect.Method mName = catObj.getClass().getMethod("getName");
-                    Object nameVal = mName.invoke(catObj);
-                    if (nameVal != null) nameStr = nameVal.toString();
-                } catch (Exception ignored) {}
-
-                boolean isActive = (paramCategoryId != null && paramCategoryId.equals(idStr));
+            List catList = (List) categories;
+            for (int i = 0; i < catList.size(); i++) {
+                Object cat = catList.get(i);
+                String id = getProperty(cat, "id");
+                String name = getProperty(cat, "name");
+                boolean isActive = paramCategoryId != null && paramCategoryId.equals(id);
     %>
-        <a href="<%=ctx%>/product/list?categoryId=<%=idStr%>" class="<%=isActive ? "active" : ""%>"><%=nameStr%></a>
+        <a href="<%=ctx%>/product/list?categoryId=<%=id%>" class="<%=isActive ? "active" : ""%>"><%=name%></a>
     <%
             }
         }
@@ -106,41 +122,25 @@
     <%
         Object products = request.getAttribute("recommendProducts");
         if (products instanceof List) {
-            for (Object prodObj : (List<?>) products) {
-                // 反射获取 product 的属性
-                String idStr = "";
-                String nameStr = "";
-                String imageStr = "";
-                String priceStr = "";
-                try {
-                    Class<?> cls = prodObj.getClass();
-                    Object idVal = cls.getMethod("getId").invoke(prodObj);
-                    if (idVal != null) idStr = idVal.toString();
-                    Object nameVal = cls.getMethod("getName").invoke(prodObj);
-                    if (nameVal != null) nameStr = nameVal.toString();
-                    try {
-                        Object imgVal = cls.getMethod("getMain_image").invoke(prodObj);
-                        if (imgVal != null) imageStr = imgVal.toString();
-                    } catch (NoSuchMethodException e1) {
-                        try {
-                            Object imgVal = cls.getMethod("getMainImage").invoke(prodObj);
-                            if (imgVal != null) imageStr = imgVal.toString();
-                        } catch (Exception ignored2) {}
-                    }
-                    Object priceVal = cls.getMethod("getPrice").invoke(prodObj);
-                    if (priceVal != null) priceStr = priceVal.toString();
-                } catch (Exception ignored) {}
+            List prodList = (List) products;
+            for (int i = 0; i < prodList.size(); i++) {
+                Object prod = prodList.get(i);
+                String id = getProperty(prod, "id");
+                String name = getProperty(prod, "name");
+                String image = getProperty(prod, "main_image");
+                if (image.equals("")) image = getProperty(prod, "mainImage");
+                String price = getProperty(prod, "price");
     %>
             <div class="col-md-3 col-sm-6">
                 <div class="product-card">
-                    <a href="<%=ctx%>/product/detail?id=<%=idStr%>">
-                        <img src="<%=imageStr%>" alt="<%=nameStr%>">
+                    <a href="<%=ctx%>/product/detail?id=<%=id%>">
+                        <img src="<%=image%>" alt="<%=name%>">
                     </a>
-                    <div class="name"><a href="<%=ctx%>/product/detail?id=<%=idStr%>"><%=nameStr%></a></div>
-                    <div class="price">￥<%=priceStr%></div>
-    <%              if (isCustomer) { %>
-                    <a href="<%=ctx%>/cart/add?productId=<%=idStr%>" class="btn btn-danger btn-sm">加入购物车</a>
-    <%              } %>
+                    <div class="name"><a href="<%=ctx%>/product/detail?id=<%=id%>"><%=name%></a></div>
+                    <div class="price">￥<%=price%></div>
+    <%          if (isCustomer) { %>
+                    <a href="<%=ctx%>/cart/add?productId=<%=id%>" class="btn btn-danger btn-sm">加入购物车</a>
+    <%          } %>
                 </div>
             </div>
     <%
