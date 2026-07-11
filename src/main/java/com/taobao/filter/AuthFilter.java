@@ -8,7 +8,13 @@ import java.io.IOException;
 
 /**
  * 统一权限认证过滤器
- * 拦截所有需要登录才能访问的路径，检查用户是否已登录
+ * 拦截所有需要登录才能访问的路径，检查用户是否已登录以及角色权限
+ * 
+ * 四类角色权限映射：
+ * - browser（浏览者）：仅可访问公开页面（首页、商品浏览、公告）
+ * - customer（顾客）：可访问前台买家功能（购物车、订单、支付、评价、地址）
+ * - shopkeeper（商家）：可访问商家后台功能（店铺管理、商品管理、订单处理）
+ * - operator（运营商）：可访问运营商后台功能（用户管理、店铺审核、数据统计）
  */
 public class AuthFilter implements Filter {
 
@@ -29,11 +35,7 @@ public class AuthFilter implements Filter {
         String path = uri.substring(contextPath.length());
 
         // 放行静态资源
-        if (path.endsWith(".css") || path.endsWith(".js") || path.endsWith(".png")
-                || path.endsWith(".jpg") || path.endsWith(".jpeg") || path.endsWith(".gif")
-                || path.endsWith(".ico") || path.endsWith(".woff") || path.endsWith(".woff2")
-                || path.endsWith(".ttf") || path.endsWith(".svg")
-                || path.endsWith(".map")) {
+        if (isStaticResource(path)) {
             chain.doFilter(request, response);
             return;
         }
@@ -57,15 +59,9 @@ public class AuthFilter implements Filter {
             return;
         }
 
-        // ============ 公开页面：首页、商品浏览、公告、店铺首页 ============
-        if (path.equals("/") || path.equals("/index") || path.equals("/index.jsp")
-                || path.startsWith("/product/")
-                || path.startsWith("/announcement/")
-                || path.startsWith("/category/")
-                || path.equals("/shop/home") || path.startsWith("/shop/product/")
-                || path.startsWith("/shop/info/")
-                || path.startsWith("/shop/category/")
-                || path.startsWith("/shop/review/")) {
+        // ============ 公开页面：浏览者可访问 ============
+        // 首页、商品浏览、公告、店铺首页、商品详情等
+        if (isPublicPage(path)) {
             chain.doFilter(request, response);
             return;
         }
@@ -77,23 +73,68 @@ public class AuthFilter implements Filter {
             return;
         }
 
-        // ============ 角色检查：/admin/* 只允许 operator ============
+        // ============ 角色权限检查 ============
         String userRole = (String) session.getAttribute("userRole");
+        
+        // 运营商后台：仅 operator 可访问
         if (path.startsWith("/admin/")) {
-            if (userRole == null || !userRole.equals("operator")) {
+            if (!"operator".equals(userRole)) {
                 resp.sendRedirect(contextPath + "/admin/login");
                 return;
             }
         }
-
-        // ============ 角色检查：/shop/* 只允许 shopkeeper（ShopAuthFilter 会做更细检查） ============
-        // （ShopAuthFilter 会在之后检查店铺状态，这里只保证已登录）
+        
+        // 商家后台：仅 shopkeeper 可访问
+        else if (path.startsWith("/shop/")) {
+            if (!"shopkeeper".equals(userRole)) {
+                resp.sendRedirect(contextPath + "/login");
+                return;
+            }
+        }
+        
+        // 顾客前台：仅 customer 可访问
+        else if (path.startsWith("/customer/") || path.startsWith("/cart/") 
+                || path.startsWith("/order/") || path.startsWith("/payment/")
+                || path.startsWith("/review/") || path.startsWith("/aftersale/")
+                || path.startsWith("/address/")) {
+            if (!"customer".equals(userRole)) {
+                resp.sendRedirect(contextPath + "/login");
+                return;
+            }
+        }
 
         // 将用户信息传递给后续处理
         req.setAttribute("userId", session.getAttribute("userId"));
         req.setAttribute("userRole", userRole);
 
         chain.doFilter(request, response);
+    }
+
+    /**
+     * 判断是否为静态资源
+     */
+    private boolean isStaticResource(String path) {
+        String lowerPath = path.toLowerCase();
+        return lowerPath.endsWith(".css") || lowerPath.endsWith(".js") || lowerPath.endsWith(".png")
+                || lowerPath.endsWith(".jpg") || lowerPath.endsWith(".jpeg") || lowerPath.endsWith(".gif")
+                || lowerPath.endsWith(".ico") || lowerPath.endsWith(".woff") || lowerPath.endsWith(".woff2")
+                || lowerPath.endsWith(".ttf") || lowerPath.endsWith(".svg") || lowerPath.endsWith(".map")
+                || lowerPath.endsWith(".html") || lowerPath.endsWith(".json") || lowerPath.endsWith(".txt");
+    }
+
+    /**
+     * 判断是否为公开页面（浏览者可访问）
+     */
+    private boolean isPublicPage(String path) {
+        return path.equals("/") || path.equals("/index") || path.equals("/index.jsp")
+                || path.startsWith("/product/")
+                || path.startsWith("/announcement/")
+                || path.startsWith("/category/")
+                || path.equals("/shop/home") || path.startsWith("/shop/product/")
+                || path.startsWith("/shop/info/")
+                || path.startsWith("/shop/category/")
+                || path.startsWith("/shop/review/")
+                || path.startsWith("/checkout");
     }
 
     @Override
