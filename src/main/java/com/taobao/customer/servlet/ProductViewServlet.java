@@ -89,8 +89,13 @@ public class ProductViewServlet extends HttpServlet {
         try (Connection conn = DBUtil.getConnection()) {
             // 查询总数
             PreparedStatement psCount = conn.prepareStatement(
-                    "SELECT COUNT(*) FROM product WHERE status = 1 AND name LIKE ?");
+                    "SELECT COUNT(*) FROM product p LEFT JOIN category c ON p.category_id = c.id " +
+                    "LEFT JOIN category pc ON c.parent_id = pc.id " +
+                    "WHERE p.status = 1 AND (p.name LIKE ? OR p.description LIKE ? OR c.name LIKE ? OR pc.name LIKE ?)");
             psCount.setString(1, "%" + keyword + "%");
+            psCount.setString(2, "%" + keyword + "%");
+            psCount.setString(3, "%" + keyword + "%");
+            psCount.setString(4, "%" + keyword + "%");
             ResultSet rsCount = psCount.executeQuery();
             int totalCount = rsCount.next() ? rsCount.getInt(1) : 0;
             int totalPages = (int) Math.ceil((double) totalCount / pageSize);
@@ -105,10 +110,17 @@ public class ProductViewServlet extends HttpServlet {
             }
 
             PreparedStatement ps = conn.prepareStatement(
-                    "SELECT p.*, s.shop_name FROM product p LEFT JOIN shop s ON p.shop_id = s.id WHERE p.status = 1 AND p.name LIKE ? ORDER BY p." + orderClause + " LIMIT ?, ?");
+                    "SELECT p.*, s.shop_name FROM product p LEFT JOIN shop s ON p.shop_id = s.id " +
+                    "LEFT JOIN category c ON p.category_id = c.id " +
+                    "LEFT JOIN category pc ON c.parent_id = pc.id " +
+                    "WHERE p.status = 1 AND (p.name LIKE ? OR p.description LIKE ? OR c.name LIKE ? OR pc.name LIKE ?) " +
+                    "ORDER BY p." + orderClause + " LIMIT ?, ?");
             ps.setString(1, "%" + keyword + "%");
-            ps.setInt(2, (page - 1) * pageSize);
-            ps.setInt(3, pageSize);
+            ps.setString(2, "%" + keyword + "%");
+            ps.setString(3, "%" + keyword + "%");
+            ps.setString(4, "%" + keyword + "%");
+            ps.setInt(5, (page - 1) * pageSize);
+            ps.setInt(6, pageSize);
             ResultSet rs = ps.executeQuery();
             List<String[]> products = new ArrayList<>();
             while (rs.next()) {

@@ -22,6 +22,10 @@
                 <li><a href="<%=base%>/shop/home">商家后台</a></li>
             <% } %>
         </ul>
+        <form class="navbar-search" action="<%=base%>/product/search" method="get">
+            <input type="text" name="keyword" placeholder="搜索商品..." value="">
+            <button type="submit">搜索</button>
+        </form>
         <ul class="navbar-nav navbar-right">
             <% if (!loggedIn) { %>
                 <li><a href="<%=base%>/login">登录</a></li>
