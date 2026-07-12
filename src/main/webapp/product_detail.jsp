@@ -6,7 +6,7 @@
 <body>
 <jsp:include page="header.jsp"/>
 <div class="container"><div class="row">
-<div class="col-md-5"><img src="${prodCover}" class="img-responsive" alt="${prodName}"></div>
+<div class="col-md-5"><img src="${pageContext.request.contextPath}${prodCover}" class="img-responsive" alt="${prodName}"></div>
 <div class="col-md-7"><h2>${prodName}</h2><p>店铺: ${shopName}</p>
 <h3 class="price">￥${prodPrice}</h3><p>库存: ${prodStock} | 销量: ${prodSales}</p>
 <form action="${pageContext.request.contextPath}/cart/add" method="post" class="form-inline">

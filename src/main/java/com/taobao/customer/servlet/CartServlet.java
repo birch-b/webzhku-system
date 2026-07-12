@@ -16,6 +16,14 @@ import java.util.List;
 public class CartServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String pathInfo = req.getPathInfo();
+        if (pathInfo != null) {
+            switch (pathInfo) {
+                case "/delete": deleteCart(req, resp); return;
+                case "/selectAll": selectAll(req, resp); return;
+                case "/toggle": toggleSelect(req, resp); return;
+            }
+        }
         Long userId = (Long) req.getSession().getAttribute("userId");
         try (Connection conn = DBUtil.getConnection()) {
             PreparedStatement ps = conn.prepareStatement(
