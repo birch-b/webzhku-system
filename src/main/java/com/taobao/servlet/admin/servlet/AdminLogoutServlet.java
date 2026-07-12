@@ -1,4 +1,4 @@
-package com.taobao.admin.servlet;
+package com.taobao.servlet.admin.servlet;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -8,20 +8,19 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
- * 已合并到统一登录系统
- * 此入口保留用于兼容，所有访问直接跳转到 /login
- * 登录后由 LoginServlet 根据 user.role 自动分流
+ * 运营商后台退出 - 合并到统一登出入口
+ * 所有角色共用 /logout
  */
-@WebServlet("/admin/login")
-public class AdminLoginServlet extends HttpServlet {
+@WebServlet("/admin/logout")
+public class AdminLogoutServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.sendRedirect(req.getContextPath() + "/login");
+        resp.sendRedirect(req.getContextPath() + "/logout");
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.sendRedirect(req.getContextPath() + "/login");
+        doGet(req, resp);
     }
 }

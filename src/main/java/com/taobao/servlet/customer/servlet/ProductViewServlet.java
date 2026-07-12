@@ -1,4 +1,4 @@
-package com.taobao.customer.servlet;
+package com.taobao.servlet.customer.servlet;
 
 import com.taobao.util.DBUtil;
 import com.taobao.util.PageUtil;
