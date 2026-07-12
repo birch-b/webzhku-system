@@ -1,4 +1,4 @@
-package com.taobao.shop.servlet;
+package com.taobao.servlet.shop.servlet;
 
 import com.taobao.dao.ShopDAO;
 import com.taobao.util.DBUtil;
