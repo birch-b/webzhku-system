@@ -22,7 +22,7 @@
         .action-panel { background: #f9f9f9; padding: 20px; border-radius: 4px; margin-top: 20px; }
     </style>
 </head>
-<body>
+<body data-role="shopkeeper">
     <%@ include file="../header.jsp"%>
 
     <div class="container">

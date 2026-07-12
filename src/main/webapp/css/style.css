@@ -19,7 +19,7 @@ body {
 }
 a { text-decoration: none; color: inherit; }
 a:hover { text-decoration: underline; }
-img { max-width: 100%; }
+img { max-width: 50%; }
 
 /* ==================== 主题色 - 顾客 (默认) ==================== */
 :root,
@@ -30,12 +30,12 @@ body[data-role="customer"] {
     --accent: #ff9500;
 }
 
-/* ==================== 主题色 - 商家 ==================== */
+/* ==================== 主题色 - 商家 (统一橙色系，与前台品牌一致) ==================== */
 body[data-role="shopkeeper"] {
-    --primary: #2c3e50;
-    --primary-dark: #1a252f;
-    --primary-light: #e8f0f5;
-    --accent: #3498db;
+    --primary: #ff5000;
+    --primary-dark: #e4393c;
+    --primary-light: #ffe4d9;
+    --accent: #ff9500;
 }
 
 /* ==================== 主题色 - 运营商 ==================== */
@@ -112,6 +112,48 @@ body[data-role="operator"] {
     text-decoration: none;
 }
 .navbar-right { margin-left: auto; }
+
+/* 店主导航栏：圆形头像 + 店铺名垂直对齐 */
+/* 导航圆形头像专用修复 */
+.navbar-nav .navbar-avatar-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    overflow: hidden !important; /* 强制溢出裁剪 */
+    border: 2px solid rgba(255,255,255,0.55);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    background: #fff;
+    flex-shrink: 0;
+    vertical-align: middle;
+    margin-right: 7px;
+}
+/* 头像图片强制填满圆形容器 */
+.navbar-nav .navbar-avatar-circle img {
+    display: block !important;
+    width: 34px !important;
+    height: 34px !important;
+    object-fit: cover !important; /* 核心：居中裁剪，填满容器 */
+    object-position: center center;
+    border: none !important;
+    border-radius: 0 important;
+    max-width: none !important; /* 覆盖全局img{max-width:100%} */
+    max-height: none !important;
+}
+.navbar-nav .shopkeeper-nav-link {
+    display: inline-flex !important;
+    align-items: center;
+    line-height: 1;
+    text-decoration: none !important;
+    color: #fff !important;
+}
+.navbar .shopkeeper-nav-link:hover {
+    background: rgba(255,255,255,0.18);
+    border-radius: var(--radius-sm);
+    text-decoration: none !important;
+}
 
 /* ==================== 下拉菜单 ==================== */
 .dropdown { position: relative; }

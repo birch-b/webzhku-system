@@ -9,8 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @WebServlet("/shop/category/*")
 public class ShopCategoryServlet extends HttpServlet {
@@ -24,12 +23,22 @@ public class ShopCategoryServlet extends HttpServlet {
             PreparedStatement ps = conn.prepareStatement("SELECT * FROM category WHERE shop_id = ? ORDER BY sort_order");
             ps.setLong(1, shopId); ResultSet rs = ps.executeQuery();
             List<String[]> categories = new ArrayList<>();
+            Map<String, String> parentMap = new HashMap<>(); // parentId -> parentName，给 JSP 显示父分类名用
+            List<String[]> topCategories = new ArrayList<>(); // 顶级分类（可选作为父级）
             while (rs.next()) {
-                categories.add(new String[]{String.valueOf(rs.getLong("id")), rs.getString("name"),
-                    String.valueOf(rs.getLong("parent_id")), String.valueOf(rs.getInt("sort_order")),
-                    String.valueOf(rs.getInt("status"))});
+                long id = rs.getLong("id");
+                String name = rs.getString("name");
+                long parentId = rs.getLong("parent_id");
+                String[] row = new String[]{String.valueOf(id), name, String.valueOf(parentId),
+                    String.valueOf(rs.getInt("sort_order")), String.valueOf(rs.getInt("status"))};
+                categories.add(row);
+                parentMap.put(String.valueOf(id), name); // 所有分类 id->name 存一份，供二级分类显示父分类名字
+                if (parentId == 0L) topCategories.add(row); // 只把顶级分类放进下拉框（用户不用选三级，2层足够）
             }
-            req.setAttribute("categories", categories); req.setAttribute("shopId", shopId);
+            req.setAttribute("categories", categories);
+            req.setAttribute("topCategories", topCategories);
+            req.setAttribute("parentMap", parentMap);
+            req.setAttribute("shopId", shopId);
             req.getRequestDispatcher("/shop/category_list.jsp").forward(req, resp);
         } catch (Exception e) {
             e.printStackTrace(); req.setAttribute("error", "查询分类失败");

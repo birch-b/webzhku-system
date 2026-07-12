@@ -1,68 +1,79 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%
+    // header.jsp - 公共导航栏（被 @include 包含，不要声明和主文件重复的变量！）
     Object userIdObj = session.getAttribute("userId");
     Object userRoleObj = session.getAttribute("userRole");
-    Object userObj = session.getAttribute("user");
+    Object nicknameObj = session.getAttribute("nickname");
 
     boolean loggedIn = userIdObj != null;
     String role = userRoleObj != null ? userRoleObj.toString() : "";
-    String nickname = "";
-    if (userObj != null) {
-        try {
-            java.lang.reflect.Method m = userObj.getClass().getMethod("getNickname");
-            Object n = m.invoke(userObj);
-            if (n != null) nickname = n.toString();
-        } catch (Exception ignored) {}
+    String nickname = nicknameObj != null ? nicknameObj.toString() : "用户";
+    String base = request.getContextPath();
+
+    // 店主角色：取 session 里的店铺名 + 店铺头像（ShopAuthFilter 写入 / ShopInfoServlet 更新）
+    String shopName = null, shopAvatar = null;
+    if ("shopkeeper".equals(role)) {
+        Object sn = session.getAttribute("shopName");
+        Object sa = session.getAttribute("shopAvatar");
+        if (sn != null) shopName = sn.toString();
+        if (sa != null) shopAvatar = sa.toString();
     }
-    if (nickname.isEmpty() && userObj != null) {
-        try {
-            java.lang.reflect.Method m = userObj.getClass().getMethod("getUsername");
-            Object n = m.invoke(userObj);
-            if (n != null) nickname = n.toString();
-        } catch (Exception ignored) {}
+    if (shopName == null || shopName.isEmpty()) shopName = nickname;
+    String avatarUrl = null;
+    if (shopAvatar != null && !shopAvatar.isEmpty()) {
+        if (shopAvatar.startsWith("http://") || shopAvatar.startsWith("https://")) {
+            avatarUrl = shopAvatar;
+        } else {
+            // DB 默认值是 "/upload/shop/default.png"，拼成 /webzhku-system/upload/shop/default.png
+            avatarUrl = shopAvatar.startsWith("/") ? (base + shopAvatar) : (base + "/" + shopAvatar);
+        }
     }
-    if (nickname.isEmpty()) nickname = "用户";
 %>
 <nav class="navbar">
     <div class="container">
-        <a class="navbar-brand" href="<%=request.getContextPath()%>/">淘宝购物系统</a>
+        <a class="navbar-brand" href="<%=base%>/">淘宝购物系统</a>
         <ul class="navbar-nav">
-            <li><a href="<%=request.getContextPath()%>/">首页</a></li>
-            <li><a href="<%=request.getContextPath()%>/product/list">全部商品</a></li>
+            <li><a href="<%=base%>/">首页</a></li>
+            <li><a href="<%=base%>/product/list">全部商品</a></li>
             <% if ("operator".equals(role)) { %>
-                <li><a href="<%=request.getContextPath()%>/admin/stat/dashboard">后台管理</a></li>
+                <li><a href="<%=base%>/admin/stat/dashboard">后台管理</a></li>
             <% } else if ("shopkeeper".equals(role)) { %>
-                <li><a href="<%=request.getContextPath()%>/shop/home">商家后台</a></li>
+                <li><a href="<%=base%>/shop/home">商家后台</a></li>
             <% } %>
         </ul>
         <ul class="navbar-nav navbar-right">
             <% if (!loggedIn) { %>
-                <li><a href="<%=request.getContextPath()%>/login">登录</a></li>
-                <li><a href="<%=request.getContextPath()%>/register">注册</a></li>
+                <li><a href="<%=base%>/login">登录</a></li>
+                <li><a href="<%=base%>/register">注册</a></li>
             <% } else { %>
                 <% if ("customer".equals(role)) { %>
-                    <li><a href="<%=request.getContextPath()%>/cart/list">🛒 购物车</a></li>
-                    <li><a href="<%=request.getContextPath()%>/order/list">📋 我的订单</a></li>
+                    <li><a href="<%=base%>/cart/list">🛒 购物车</a></li>
+                    <li><a href="<%=base%>/order/list">📋 我的订单</a></li>
                 <% } %>
                 <li class="dropdown">
-                    <a href="#">👤 <%=nickname%> ▾</a>
+                    <% if ("shopkeeper".equals(role)) { %>
+                        <a href="#" class="shopkeeper-nav-link">
+                            👤 <%=shopName%> ▾
+                        </a>
+                    <% } else { %>
+                        <a href="#">👤 <%="shopkeeper".equals(role) ? shopName : nickname%> ▾</a>
+                    <% } %>
                     <ul class="dropdown-menu">
                         <% if ("customer".equals(role)) { %>
-                            <li><a href="<%=request.getContextPath()%>/customer/profile">个人中心</a></li>
-                            <li><a href="<%=request.getContextPath()%>/address/list">收货地址</a></li>
-                            <li><a href="<%=request.getContextPath()%>/aftersale">售后记录</a></li>
+                            <li><a href="<%=base%>/customer/profile">个人中心</a></li>
+                            <li><a href="<%=base%>/address/list">收货地址</a></li>
+                            <li><a href="<%=base%>/aftersale">售后记录</a></li>
                         <% } else if ("shopkeeper".equals(role)) { %>
-                            <li><a href="<%=request.getContextPath()%>/shop/info/view">店铺信息</a></li>
-                            <li><a href="<%=request.getContextPath()%>/shop/product/list">商品管理</a></li>
-                            <li><a href="<%=request.getContextPath()%>/shop/order/list">订单管理</a></li>
+                            <li><a href="<%=base%>/shop/info/view">店铺信息</a></li>
+                            <li><a href="<%=base%>/shop/product/list">商品管理</a></li>
+                            <li><a href="<%=base%>/shop/order/list">订单管理</a></li>
                         <% } else if ("operator".equals(role)) { %>
-                            <li><a href="<%=request.getContextPath()%>/admin/stat/dashboard">数据概览</a></li>
-                            <li><a href="<%=request.getContextPath()%>/admin/user/list">用户管理</a></li>
-                            <li><a href="<%=request.getContextPath()%>/admin/shop/auditList">店铺审核</a></li>
-                            <li><a href="<%=request.getContextPath()%>/admin/order/list">订单监控</a></li>
+                            <li><a href="<%=base%>/admin/stat/dashboard">数据概览</a></li>
+                            <li><a href="<%=base%>/admin/user/list">用户管理</a></li>
+                            <li><a href="<%=base%>/admin/shop/auditList">店铺审核</a></li>
+                            <li><a href="<%=base%>/admin/order/list">订单监控</a></li>
                         <% } %>
                         <li role="separator" class="divider"></li>
-                        <li><a href="<%=request.getContextPath()%>/logout">退出登录</a></li>
+                        <li><a href="<%=base%>/logout">退出登录</a></li>
                     </ul>
                 </li>
             <% } %>
