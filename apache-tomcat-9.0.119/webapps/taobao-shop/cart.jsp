@@ -42,13 +42,15 @@
                 <c:forEach var="ci" items="${cartItems}">
                     <tr>
                         <td>
-                            <a href="${pageContext.request.contextPath}/cart/toggle?id=${ci[0]}" style="text-decoration:none">
-                                <input type="checkbox" ${ci[7]=='1' ? 'checked' : ''} disabled>
-                            </a>
+                            <input type="checkbox" class="cart-check" data-id="${ci[0]}" ${ci[7]=='1' ? 'checked' : ''}>
                         </td>
                         <td>
                             <a href="${pageContext.request.contextPath}/product/detail?id=${ci[1]}">
-                                <img src="${ci[6]}" style="width:60px"> ${ci[2]}
+                                <c:set var="image" value="${ci[6]}"/>
+                                <c:if test="${empty image or image.startsWith('/upload/')}">
+                                    <c:set var="image" value="https://picsum.photos/60/60?random=${ci[1]}"/>
+                                </c:if>
+                                <img src="${image}" style="width:60px"> ${ci[2]}
                             </a>
                         </td>
                         <td>￥${ci[3]}</td>
@@ -75,10 +77,29 @@
     </c:choose>
 </div>
 <script>
-document.getElementById('checkAll').addEventListener('change', function() {
+var ctx = '${pageContext.request.contextPath}';
+var checkAll = document.getElementById('checkAll');
+var checks = document.querySelectorAll('.cart-check');
+
+function syncCheckAll() {
+    var total = checks.length;
+    var checked = document.querySelectorAll('.cart-check:checked').length;
+    checkAll.checked = (total > 0 && checked === total);
+}
+
+checkAll.addEventListener('change', function() {
     var s = this.checked ? 1 : 0;
-    location.href = '${pageContext.request.contextPath}/cart/selectAll?selected=' + s;
+    location.href = ctx + '/cart/selectAll?selected=' + s;
 });
+
+checks.forEach(function(cb) {
+    cb.addEventListener('change', function() {
+        var id = this.getAttribute('data-id');
+        location.href = ctx + '/cart/toggle?id=' + id;
+    });
+});
+
+syncCheckAll();
 </script>
 <jsp:include page="footer.jsp"/>
 </body>

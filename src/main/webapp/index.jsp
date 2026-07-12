@@ -69,14 +69,6 @@
                     <span class="dot" onclick="goToSlideDot(4)"></span>
                 </div>
             </div>
-            <div class="item">
-                <img src="<%=ctx%>/common/images/3.webp" alt="Banner3">
-                <div class="carousel-caption"><h3>品质保障 放心购物</h3></div>
-            </div>
-            <div class="item">
-                <img src="<%=ctx%>/common/images/4.webp" alt="Banner4">
-                <div class="carousel-caption"><h3>每日新品 限时特惠</h3></div>
-            </div>
         </div>
     </div>
 
@@ -125,9 +117,6 @@
                                     <small>￥${prod.originalPrice}</small>
                                 </c:if>
                             </div>
-                            <c:if test="${sessionScope.userRole == 'customer'}">
-                                <a href="${pageContext.request.contextPath}/cart/add?productId=${prod.id}" class="add-cart-btn">加入购物车</a>
-                            </c:if>
                         </div>
                     </div>
                 </div>

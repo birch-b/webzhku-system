@@ -61,8 +61,12 @@
                             </thead>
                             <tbody>
                                 <c:forEach var="p" items="${products}">
+                                    <c:set var="coverImg" value="${p[7]}"/>
+                                    <c:if test="${empty coverImg or coverImg.startsWith('/upload/')}">
+                                        <c:set var="coverImg" value="https://picsum.photos/50/50?random=${p[0]}"/>
+                                    </c:if>
                                     <tr>
-                                        <td><img src="${p[7]}" style="width:50px;height:50px;object-fit:cover;border-radius:4px;" alt="${p[1]}"></td>
+                                        <td><img src="${coverImg}" style="width:50px;height:50px;object-fit:cover;border-radius:4px;" alt="${p[1]}"></td>
                                         <td>${p[1]}</td>
                                         <td>${p[2]}</td>
                                         <td style="color:var(--primary);font-weight:600;">￥${p[3]}</td>

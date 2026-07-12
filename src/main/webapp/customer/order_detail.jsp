@@ -1,7 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>订单详情</title>
-<link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css"></head>
+<link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/bootstrap/3.3.7/css/bootstrap.min.css"><link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css?v=5"></head>
 <body>
 <jsp:include page="../header.jsp"/>
 <div class="order-page">

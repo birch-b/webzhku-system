@@ -11,6 +11,7 @@
 <a href="${pageContext.request.contextPath}/order/list" class="btn btn-primary btn-block">查看我的订单</a></div>
 </c:when><c:otherwise>
 <div class="pay-box"><h2 class="text-center">💰 模拟支付</h2><p class="text-center">支付金额: ￥${payAmount}</p>
+<a href="${pageContext.request.contextPath}/order/list" class="btn btn-default" style="margin-bottom:15px">← 返回订单列表</a>
 <c:if test="${not empty error}"><div class="alert alert-danger">${error}</div></c:if>
 <form action="${pageContext.request.contextPath}/payment/pay" method="post">
 <input type="hidden" name="orderId" value="${orderId}">

@@ -49,26 +49,26 @@ body { background-color: #f5f5f5; }
     </c:when>
     <c:otherwise>
         <c:forEach var="addr" items="${addresses}">
-        <div class="panel panel-default addr-panel ${addr[4]=='1' ? 'addr-default' : ''}">
+        <div class="panel panel-default addr-panel ${addr.isDefault==1 ? 'addr-default' : ''}">
         <div class="panel-body">
             <div class="row">
                 <div class="col-md-8">
-                    <strong>${addr[1]}</strong> &nbsp; ${addr[2]}
-                    <br><span class="text-muted">${addr[3]}</span>
-                    <c:if test="${addr[4]=='1'}"><span class="label label-primary" style="margin-left:10px;">默认</span></c:if>
+                    <strong>${addr.receiverName}</strong> &nbsp; ${addr.phone}
+                    <br><span class="text-muted">${addr.fullAddress}</span>
+                    <c:if test="${addr.isDefault==1}"><span class="label label-primary" style="margin-left:10px;">默认</span></c:if>
                 </div>
                 <div class="col-md-4 text-right">
-                    <c:if test="${addr[4]!='1'}">
+                    <c:if test="${addr.isDefault!=1}">
                     <form method="post" action="${pageContext.request.contextPath}/address/list" style="display:inline">
                         <input type="hidden" name="action" value="setDefault">
-                        <input type="hidden" name="id" value="${addr[0]}">
+                        <input type="hidden" name="id" value="${addr.id}">
                         <button class="btn btn-xs btn-default">设为默认</button>
                     </form>
                     </c:if>
-                    <a href="${pageContext.request.contextPath}/address/edit?id=${addr[0]}" class="btn btn-xs btn-info">编辑</a>
+                    <a href="${pageContext.request.contextPath}/address/edit?id=${addr.id}" class="btn btn-xs btn-info">编辑</a>
                     <form method="post" action="${pageContext.request.contextPath}/address/list" style="display:inline">
                         <input type="hidden" name="action" value="delete">
-                        <input type="hidden" name="id" value="${addr[0]}">
+                        <input type="hidden" name="id" value="${addr.id}">
                         <button class="btn btn-xs btn-danger" onclick="return confirm('确定删除该地址?')">删除</button>
                     </form>
                 </div>

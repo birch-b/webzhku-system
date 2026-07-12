@@ -23,10 +23,10 @@
             <a href="${pageContext.request.contextPath}/admin/user/list">
                 <span class="nav-icon">👥</span><span>用户管理</span>
             </a>
-            <a href="${pageContext.request.contextPath}/admin/shop/auditList" class="active">
+            <a href="${pageContext.request.contextPath}/admin/shop/auditList" class="${empty shops ? 'active' : ''}">
                 <span class="nav-icon">🏪</span><span>店铺审核</span>
             </a>
-            <a href="${pageContext.request.contextPath}/admin/shop/allShops">
+            <a href="${pageContext.request.contextPath}/admin/shop/allShops" class="${not empty shops ? 'active' : ''}">
                 <span class="nav-icon">🏬</span><span>全部店铺</span>
             </a>
             <a href="${pageContext.request.contextPath}/admin/announcement/list">
