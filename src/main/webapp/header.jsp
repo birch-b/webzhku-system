@@ -38,10 +38,10 @@
                 <li class="dropdown">
                     <% if ("shopkeeper".equals(role)) { %>
                         <a href="#" class="shopkeeper-nav-link">
-                            👤 <%=shopName%> ▾
+                            👤 ${shopName} ▾
                         </a>
                     <% } else { %>
-                        <a href="#">👤 <%="shopkeeper".equals(role) ? shopName : nickname%> ▾</a>
+                        <a href="#">👤 ${shopkeeper.equals(role) ? shopName : nickname} ▾</a>
                     <% } %>
                     <ul class="dropdown-menu">
                         <% if ("customer".equals(role)) { %>

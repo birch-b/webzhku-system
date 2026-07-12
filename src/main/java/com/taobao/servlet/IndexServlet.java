@@ -40,6 +40,14 @@ public class IndexServlet extends HttpServlet {
             req.setAttribute("products", products);
             req.setAttribute("selectedCategory", categoryName);
 
+            // 4. 查询商家店铺名称（如果是商家角色）
+            String role = (String) req.getSession().getAttribute("userRole");
+            if ("shopkeeper".equals(role)) {
+                Long userId = (Long) req.getSession().getAttribute("userId");
+                String shopName = getShopNameByUserId(conn, userId);
+                req.setAttribute("shopName", shopName);
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -122,5 +130,17 @@ public class IndexServlet extends HttpServlet {
             }
         }
         return list;
+    }
+
+    private String getShopNameByUserId(Connection conn, Long userId) throws SQLException {
+        String sql = "SELECT shop_name FROM shop WHERE owner_id = ? AND status = 1";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, userId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getString("shop_name");
+            }
+        }
+        return "";
     }
 }
