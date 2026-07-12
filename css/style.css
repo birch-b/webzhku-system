@@ -1,0 +1,44 @@
+body { font-family: "Microsoft YaHei", Arial, sans-serif; }
+.price { color: #ff5000; font-size: 20px; font-weight: bold; }
+.product-card { border: 1px solid #eee; padding: 10px; margin-bottom: 15px; transition: all 0.3s; }
+.product-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.sidebar { background: #2c3e50; color: white; min-height: 100vh; padding-top: 20px; }
+.sidebar a { color: #ecf0f1; display: block; padding: 10px 15px; text-decoration: none; border-bottom: 1px solid #34495e; }
+.sidebar a:hover, .sidebar a.active { background: #34495e; color: white; }
+.sidebar h4 { text-align: center; padding: 10px; border-bottom: 2px solid #34495e; }
+.admin-table th { background: #2c3e50; color: white; }
+.status-badge { padding: 3px 8px; border-radius: 3px; font-size: 12px; }
+.status-active { background: #27ae60; color: white; }
+.status-banned { background: #e74c3c; color: white; }
+.navbar-taobao { background: #ff5000; border: none; }
+.navbar-taobao .navbar-brand, .navbar-taobao a { color: white !important; }
+
+/* ==================== 统一消息提示样式 ==================== */
+.alert-dismissible { padding-right: 35px; }
+.alert-dismissible .close { position: absolute; right: 15px; top: 10px; }
+
+/* ==================== 页面布局辅助 ==================== */
+.page-container { padding-top: 50px; min-height: calc(100vh - 100px); }
+.panel-title-icon { margin-right: 8px; }
+
+/* ==================== 表格样式增强 ==================== */
+.table-hover tbody tr:hover { cursor: pointer; }
+.table-actions .btn { margin-right: 5px; }
+
+/* ==================== 表单样式增强 ==================== */
+.form-section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+.form-section-title { font-weight: bold; margin-bottom: 15px; color: #333; }
+.has-error .help-block { color: #e74c3c; }
+
+/* ==================== 状态标签颜色 ==================== */
+.label-success { background-color: #5cb85c; }
+.label-warning { background-color: #f0ad4e; }
+.label-danger { background-color: #d9534f; }
+.label-info { background-color: #5bc0de; }
+.label-default { background-color: #777; }
+
+/* ==================== 侧边栏菜单激活状态 ==================== */
+.nav-pills > li.active > a,
+.nav-pills > li.active > a:hover,
+.nav-pills > li.active > a:focus { background-color: #ff5000; }
+.nav-pills > li > a:hover { background-color: #ffe4d9; }

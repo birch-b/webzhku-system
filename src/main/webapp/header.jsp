@@ -36,7 +36,13 @@
                     <li><a href="<%=base%>/order/list">📋 我的订单</a></li>
                 <% } %>
                 <li class="dropdown">
-                    <a href="#">👤 <%=nickname%> ▾</a>
+                    <% if ("shopkeeper".equals(role)) { %>
+                        <a href="#" class="shopkeeper-nav-link">
+                            👤 <%=shopName%> ▾
+                        </a>
+                    <% } else { %>
+                        <a href="#">👤 <%="shopkeeper".equals(role) ? shopName : nickname%> ▾</a>
+                    <% } %>
                     <ul class="dropdown-menu">
                         <% if ("customer".equals(role)) { %>
                             <li><a href="<%=base%>/customer/profile">个人中心</a></li>

@@ -1,6 +1,7 @@
 package com.taobao.filter;
 
 import java.io.IOException;
+import java.util.Map;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -15,7 +16,7 @@ import com.taobao.dao.ShopDAO;
 
 /**
  * 商家后台权限拦截过滤器
- * 未开店或未审核的商家无法进入商家后台
+ * 未开店或未审核的商家无法进入商家后台；同时把店铺名/头像写入 session 供 header.jsp 渲染导航栏
  */
 public class ShopAuthFilter implements Filter {
 
@@ -44,24 +45,39 @@ public class ShopAuthFilter implements Filter {
 
         ShopDAO shopDAO = new ShopDAO();
         int shopStatus = shopDAO.getShopStatus(userId);
-        shopDAO.close();
 
         if (shopStatus == -2) {
+            shopDAO.close();
             response.sendRedirect(request.getContextPath() + "/shop/shop_apply.jsp");
             return;
         }
 
         if (shopStatus == 0) {
+            shopDAO.close();
             request.setAttribute("msg", "您的店铺正在审核中，请耐心等待！");
             request.getRequestDispatcher("/shop/shop_auditing.jsp").forward(request, response);
             return;
         }
 
         if (shopStatus == -1) {
+            shopDAO.close();
             request.setAttribute("msg", "您的店铺已被关闭，请联系平台管理员！");
             request.getRequestDispatcher("/shop/shop_closed.jsp").forward(request, response);
             return;
         }
+
+        // ===== status == 1 营业中：把店铺信息写进 session（缺失时才写，ShopInfoServlet 改完会主动更新 session，这里不覆盖） =====
+        if (session.getAttribute("shopId") == null
+                || session.getAttribute("shopName") == null
+                || session.getAttribute("shopAvatar") == null) {
+            Map<String, Object> shop = shopDAO.getShopByUserId(userId);
+            if (shop != null) {
+                session.setAttribute("shopId", shop.get("id"));
+                session.setAttribute("shopName", shop.get("shop_name"));
+                session.setAttribute("shopAvatar", shop.get("avatar"));
+            }
+        }
+        shopDAO.close();
 
         chain.doFilter(req, resp);
     }
