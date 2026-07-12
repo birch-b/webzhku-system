@@ -5,11 +5,13 @@
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css"></head>
 <body>
 <jsp:include page="header.jsp"/>
-<div class="container"><h3>${not empty keyword ? '搜索: '+keyword : '全部商品'}</h3>
-<div class="row"><c:forEach var="p" items="${products}">
-<div class="col-md-3 col-sm-6"><div class="thumbnail product-card">
-<a href="${pageContext.request.contextPath}/product/detail?id=${p[0]}">
-<img src="${p[3]}" alt="${p[1]}" style="height:200px"><div class="caption">
-<h5>${p[1]}</h5><p class="price">￥${p[2]}</p><p>销量: ${p[4]} | ${p[5]}</p></div></a></div></div>
+<div class="container product-section"><div class="section-header"><h2><c:if test="${not empty keyword}">搜索: ${keyword}</c:if><c:if test="${empty keyword}">全部商品</c:if></h2></div>
+<div class="product-grid"><c:forEach var="p" items="${products}">
+<div class="product-card"><div class="product-image"><a href="${pageContext.request.contextPath}/product/detail?id=${p[0]}">
+<c:choose><c:when test="${p[3] == null || p[3].isEmpty() || p[3].startsWith('/upload/')}">
+<img src="https://picsum.photos/300/300?random=${p[0]}" alt="${p[1]}">
+</c:when><c:otherwise><img src="${p[3]}" alt="${p[1]}"></c:otherwise></c:choose></a></div>
+<div class="product-info"><div class="product-name"><a href="${pageContext.request.contextPath}/product/detail?id=${p[0]}">${p[1]}</a></div>
+<div class="product-price-row"><div class="product-price">￥${p[2]}</div></div></div></div>
 </c:forEach></div></div>
 <jsp:include page="footer.jsp"/></body></html>
