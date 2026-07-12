@@ -1,5 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="java.util.*,java.util.Map,com.taobao.util.DBUtil,java.sql.*" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -43,18 +43,18 @@
 
         <section class="admin-content">
 
-            <% if (request.getParameter("msg") != null) { %>
+            <c:if test="${not empty param.msg}">
                 <div class="alert alert-success">
-                    <% String m = request.getParameter("msg");
-                        if ("banned".equals(m)) { %> ✅ 已封禁该用户账号。
-                    <% } else if ("unbanned".equals(m)) { %> ✅ 已解封该用户账号。
-                    <% } else if ("reset".equals(m)) { %> ✅ 已重置密码为默认值 (123456)。
-                    <% } else if ("roleChanged".equals(m)) { %> ✅ 角色已变更。
-                    <% } else { %> ✅ 操作成功。 <% } %>
+                    <c:choose>
+                        <c:when test="${param.msg == 'banned'}">✅ 已封禁该用户账号。</c:when>
+                        <c:when test="${param.msg == 'unbanned'}">✅ 已解封该用户账号。</c:when>
+                        <c:when test="${param.msg == 'reset'}">✅ 已重置密码为默认值 (123456)。</c:when>
+                        <c:when test="${param.msg == 'roleChanged'}">✅ 角色已变更。</c:when>
+                        <c:otherwise>✅ 操作成功。</c:otherwise>
+                    </c:choose>
                 </div>
-            <% } %>
+            </c:if>
 
-            <!-- 筛选 -->
             <div class="filter-bar">
                 <form method="get" action="${pageContext.request.contextPath}/admin/user/list" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
                     <div class="filter-item">
@@ -76,7 +76,6 @@
                 </form>
             </div>
 
-            <!-- 列表 -->
             <div class="table-wrapper">
                 <table class="admin-table" style="width:100%;">
                     <thead>
@@ -93,67 +92,61 @@
                         </tr>
                     </thead>
                     <tbody>
-                    <%
-                        List<Map<String, Object>> users = (List<Map<String, Object>>) request.getAttribute("users");
-                        if (users == null || users.isEmpty()) {
-                    %>
-                        <tr><td colspan="9" style="text-align:center;padding:40px;color:#95a5a6;">📭 暂无符合条件的用户</td></tr>
-                    <% } else {
-                        for (Map<String, Object> u : users) {
-                            long id = ((Number) u.get("id")).longValue();
-                            String username = (String) u.get("username");
-                            String nickname = (String) u.get("nickname");
-                            String phone = (String) u.get("phone");
-                            String email = (String) u.get("email");
-                            String role = (String) u.get("role");
-                            Object statusObj = u.get("status");
-                            int status = statusObj == null ? 1 : ((Number) statusObj).intValue();
-                            Object createObj = u.get("createTime");
-                            String createTime = createObj == null ? "-" : createObj.toString();
-
-                            String roleText = "operator".equals(role) ? "运营商"
-                                    : "shopkeeper".equals(role) ? "商家"
-                                    : "customer".equals(role) ? "顾客"
-                                    : "浏览者";
-                            String badgeClass = "operator".equals(role) ? "badge-primary"
-                                    : "shopkeeper".equals(role) ? "badge-info"
-                                    : "customer".equals(role) ? "badge-success" : "badge-secondary";
-                    %>
-                    <tr>
-                        <td><%= id %></td>
-                        <td><strong><%= username == null ? "" : username %></strong></td>
-                        <td><%= nickname == null ? "-" : nickname %></td>
-                        <td><%= phone == null ? "-" : phone %></td>
-                        <td><%= email == null ? "-" : email %></td>
-                        <td><span class="badge <%= badgeClass %>"><%= roleText %></span></td>
-                        <td><%
-                            if (status == 1) {
-                                out.print("<span class=\"badge badge-success\">正常</span>");
-                            } else {
-                                out.print("<span class=\"badge badge-danger\">已封禁</span>");
-                            }
-                        %></td>
-                        <td><%= createTime %></td>
-                        <td>
-                            <a class="btn btn-info btn-sm" href="${pageContext.request.contextPath}/admin/user/detail?id=<%=id%>">详情</a>
-                            <% if (status == 1) { %>
-                                <form method="post" action="${pageContext.request.contextPath}/admin/user/ban" style="display:inline;">
-                                    <input type="hidden" name="id" value="<%=id%>">
-                                    <button class="btn btn-warning btn-sm" type="submit" onclick="return confirm('确认封禁该用户？');">封禁</button>
-                                </form>
-                            <% } else { %>
-                                <form method="post" action="${pageContext.request.contextPath}/admin/user/unban" style="display:inline;">
-                                    <input type="hidden" name="id" value="<%=id%>">
-                                    <button class="btn btn-success btn-sm" type="submit" onclick="return confirm('确认解封该用户？');">解封</button>
-                                </form>
-                            <% } %>
-                            <form method="post" action="${pageContext.request.contextPath}/admin/user/resetPassword" style="display:inline;">
-                                <input type="hidden" name="id" value="<%=id%>">
-                                <button class="btn btn-secondary btn-sm" type="submit" onclick="return confirm('确认重置密码为 123456？');">重置密码</button>
-                            </form>
-                        </td>
-                    </tr>
-                    <% }} %>
+                        <c:if test="${empty requestScope.users}">
+                            <tr><td colspan="9" style="text-align:center;padding:40px;color:#95a5a6;">📭 暂无符合条件的用户</td></tr>
+                        </c:if>
+                        <c:forEach var="u" items="${requestScope.users}">
+                            <c:set var="roleText" value="浏览者"/>
+                            <c:set var="badgeClass" value="badge-secondary"/>
+                            <c:if test="${u.role == 'operator'}">
+                                <c:set var="roleText" value="运营商"/>
+                                <c:set var="badgeClass" value="badge-primary"/>
+                            </c:if>
+                            <c:if test="${u.role == 'shopkeeper'}">
+                                <c:set var="roleText" value="商家"/>
+                                <c:set var="badgeClass" value="badge-info"/>
+                            </c:if>
+                            <c:if test="${u.role == 'customer'}">
+                                <c:set var="roleText" value="顾客"/>
+                                <c:set var="badgeClass" value="badge-success"/>
+                            </c:if>
+                            <tr>
+                                <td>${u.id}</td>
+                                <td><strong>${u.username != null ? u.username : ''}</strong></td>
+                                <td>${u.nickname != null ? u.nickname : '-'}</td>
+                                <td>${u.phone != null ? u.phone : '-'}</td>
+                                <td>${u.email != null ? u.email : '-'}</td>
+                                <td><span class="badge ${badgeClass}">${roleText}</span></td>
+                                <td>
+                                    <c:if test="${u.status == 1}">
+                                        <span class="badge badge-success">正常</span>
+                                    </c:if>
+                                    <c:if test="${u.status != 1}">
+                                        <span class="badge badge-danger">已封禁</span>
+                                    </c:if>
+                                </td>
+                                <td>${u.createTime != null ? u.createTime : '-'}</td>
+                                <td>
+                                    <a class="btn btn-info btn-sm" href="${pageContext.request.contextPath}/admin/user/detail?id=${u.id}">详情</a>
+                                    <c:if test="${u.status == 1}">
+                                        <form method="post" action="${pageContext.request.contextPath}/admin/user/ban" style="display:inline;">
+                                            <input type="hidden" name="id" value="${u.id}">
+                                            <button class="btn btn-warning btn-sm" type="submit" onclick="return confirm('确认封禁该用户？');">封禁</button>
+                                        </form>
+                                    </c:if>
+                                    <c:if test="${u.status != 1}">
+                                        <form method="post" action="${pageContext.request.contextPath}/admin/user/unban" style="display:inline;">
+                                            <input type="hidden" name="id" value="${u.id}">
+                                            <button class="btn btn-success btn-sm" type="submit" onclick="return confirm('确认解封该用户？');">解封</button>
+                                        </form>
+                                    </c:if>
+                                    <form method="post" action="${pageContext.request.contextPath}/admin/user/resetPassword" style="display:inline;">
+                                        <input type="hidden" name="id" value="${u.id}">
+                                        <button class="btn btn-secondary btn-sm" type="submit" onclick="return confirm('确认重置密码为 123456？');">重置密码</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        </c:forEach>
                     </tbody>
                 </table>
             </div>

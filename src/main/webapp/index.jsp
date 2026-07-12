@@ -1,34 +1,6 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" import="java.util.List,java.lang.reflect.Method" %>
-<%
-    String ctx = request.getContextPath();
-    Object userRole = session.getAttribute("userRole");
-    Object userObj = session.getAttribute("user");
-    boolean isCustomer = userObj != null && "customer".equals(userRole != null ? userRole.toString() : "");
-%>
-<%!
-    public String getProperty(Object obj, String propName) {
-        if (obj == null) return "";
-        if (obj instanceof java.util.Map) {
-            java.util.Map map = (java.util.Map) obj;
-            Object val = map.get(propName);
-            return val == null ? "" : val.toString();
-        }
-        try {
-            String getter = "get" + Character.toUpperCase(propName.charAt(0)) + propName.substring(1);
-            Method m = obj.getClass().getMethod(getter);
-            Object val = m.invoke(obj);
-            return val == null ? "" : val.toString();
-        } catch (Exception e1) {
-            try {
-                Method m = obj.getClass().getMethod("get_" + propName);
-                Object val = m.invoke(obj);
-                return val == null ? "" : val.toString();
-            } catch (Exception e2) {
-                return "";
-            }
-        }
-    }
-%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -36,34 +8,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>淘宝购物系统 - 首页</title>
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/bootstrap/3.3.7/css/bootstrap.min.css">
-    <link rel="stylesheet" href="<%=ctx%>/css/style.css?v=4">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css?v=4">
 </head>
 <body>
     <%@ include file="header.jsp"%>
 
-    <!-- 公告栏 -->
-    <%
-        Object announcements = request.getAttribute("announcements");
-        if (announcements instanceof List && !((List) announcements).isEmpty()) {
-    %>
     <div class="announcement-bar">
-    <%
-            List annList = (List) announcements;
-            for (int i = 0; i < annList.size(); i++) {
-                Object ann = annList.get(i);
-                String id = getProperty(ann, "id");
-                String title = getProperty(ann, "title");
-    %>
-        <a href="<%=ctx%>/announcement/detail?id=<%=id%>"><%=title%></a>
-    <%
-            }
-    %>
+        <c:forEach var="ann" items="${requestScope.announcements}">
+            <a href="${pageContext.request.contextPath}/announcement/detail?id=${ann.id}">${ann.title}</a>
+        </c:forEach>
     </div>
-    <%
-        }
-    %>
 
-    <!-- 轮播图 -->
     <div class="carousel-section">
         <div class="carousel-wrapper">
             <div class="carousel">
@@ -125,93 +80,58 @@
         </div>
     </div>
 
-    <!-- 分类导航 -->
     <div class="page-container category-section">
         <div class="category-nav">
             <h4>商品分类</h4>
-            <a href="javascript:void(0)" onclick="loadProducts('')" class="<%=request.getAttribute("selectedCategory") == null ? "active" : ""%>">全部</a>
-            <%
-                Object categories = request.getAttribute("categories");
-                if (categories instanceof List) {
-                    List catList = (List) categories;
-                    String selectedCategory = (String) request.getAttribute("selectedCategory");
-                    for (int i = 0; i < catList.size(); i++) {
-                        Object cat = catList.get(i);
-                        String name = getProperty(cat, "name");
-                        boolean isActive = selectedCategory != null && selectedCategory.equals(name);
-            %>
-            <a href="javascript:void(0)" onclick="loadProducts('<%=name%>')" class="<%=isActive ? "active" : ""%>"><%=name%></a>
-            <%
-                    }
-                }
-            %>
+            <a href="javascript:void(0)" onclick="loadProducts('')" class="${empty requestScope.selectedCategory ? 'active' : ''}">全部</a>
+            <c:forEach var="cat" items="${requestScope.categories}">
+                <a href="javascript:void(0)" onclick="loadProducts('${cat.name}')" class="${requestScope.selectedCategory == cat.name ? 'active' : ''}">${cat.name}</a>
+            </c:forEach>
         </div>
     </div>
 
-    <!-- 商品列表 -->
     <div class="page-container product-section">
         <div class="section-header">
             <h2>
-                <%
-                    String selectedCategory = (String) request.getAttribute("selectedCategory");
-                    if (selectedCategory != null && !selectedCategory.isEmpty()) {
-                        out.print(selectedCategory);
-                    } else {
-                        out.print("全部商品");
-                    }
-                %>
+                <c:choose>
+                    <c:when test="${not empty requestScope.selectedCategory}">${requestScope.selectedCategory}</c:when>
+                    <c:otherwise>全部商品</c:otherwise>
+                </c:choose>
             </h2>
-            <a href="<%=ctx%>/product/list">查看全部 →</a>
+            <a href="${pageContext.request.contextPath}/product/list">查看全部 →</a>
         </div>
         <div class="product-grid">
-            <%
-                Object products = request.getAttribute("products");
-                if (products instanceof List) {
-                    List prodList = (List) products;
-                    if (prodList.isEmpty()) {
-            %>
-            <div style="text-align: center; padding: 40px; color: #999;">暂无商品</div>
-            <%
-                    } else {
-                        for (int i = 0; i < prodList.size(); i++) {
-                            Object prod = prodList.get(i);
-                            String id = getProperty(prod, "id");
-                            String name = getProperty(prod, "name");
-                            String image = getProperty(prod, "main_image");
-                            if (image.equals("")) image = getProperty(prod, "mainImage");
-                            if (image.equals("") || image.startsWith("/upload/")) {
-                                image = "https://picsum.photos/300/300?random=" + id;
-                            }
-                            String price = getProperty(prod, "price");
-                            String originalPrice = getProperty(prod, "originalPrice");
-            %>
-            <div class="product-card">
-                <div class="product-image">
-                    <a href="<%=ctx%>/product/detail?id=<%=id%>">
-                        <img src="<%=image%>" alt="<%=name%>">
-                    </a>
-                </div>
-                <div class="product-info">
-                    <div class="product-name"><a href="<%=ctx%>/product/detail?id=<%=id%>"><%=name%></a></div>
-                    <div class="product-desc">精选品质，限时特惠</div>
-                    <div class="product-price-row">
-                        <div class="product-price">
-                            ￥<%=price%>
-                            <% if (originalPrice != null && !originalPrice.equals("") && !originalPrice.equals(price)) { %>
-                                <small>￥<%=originalPrice%></small>
-                            <% } %>
+            <c:if test="${empty requestScope.products}">
+                <div style="text-align: center; padding: 40px; color: #999;">暂无商品</div>
+            </c:if>
+            <c:forEach var="prod" items="${requestScope.products}">
+                <c:set var="image" value="${prod.main_image}"/>
+                <c:if test="${empty image or image.startsWith('/upload/')}">
+                    <c:set var="image" value="https://picsum.photos/300/300?random=${prod.id}"/>
+                </c:if>
+                <div class="product-card">
+                    <div class="product-image">
+                        <a href="${pageContext.request.contextPath}/product/detail?id=${prod.id}">
+                            <img src="${image}" alt="${prod.name}">
+                        </a>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-name"><a href="${pageContext.request.contextPath}/product/detail?id=${prod.id}">${prod.name}</a></div>
+                        <div class="product-desc">精选品质，限时特惠</div>
+                        <div class="product-price-row">
+                            <div class="product-price">
+                                ￥${prod.price}
+                                <c:if test="${not empty prod.originalPrice and prod.originalPrice != prod.price}">
+                                    <small>￥${prod.originalPrice}</small>
+                                </c:if>
+                            </div>
+                            <c:if test="${sessionScope.userRole == 'customer'}">
+                                <a href="${pageContext.request.contextPath}/cart/add?productId=${prod.id}" class="add-cart-btn">加入购物车</a>
+                            </c:if>
                         </div>
-                        <% if (isCustomer) { %>
-                            <a href="<%=ctx%>/cart/add?productId=<%=id%>" class="add-cart-btn">加入购物车</a>
-                        <% } %>
                     </div>
                 </div>
-            </div>
-            <%
-                        }
-                    }
-                }
-            %>
+            </c:forEach>
         </div>
     </div>
 
@@ -324,7 +244,7 @@
             $('.section-header h2').text(title);
             
             $.ajax({
-                url: '<%=ctx%>/product/ajax',
+                url: '${pageContext.request.contextPath}/product/ajax',
                 type: 'GET',
                 data: { category: category },
                 dataType: 'json',
@@ -338,11 +258,11 @@
                                 ? p.main_image : 'https://picsum.photos/300/300?random=' + p.id;
                             html += '<div class="product-card">' +
                                 '<div class="product-image">' +
-                                '<a href="<%=ctx%>/product/detail?id=' + p.id + '">' +
+                                '<a href="${pageContext.request.contextPath}/product/detail?id=' + p.id + '">' +
                                 '<img src="' + image + '" alt="' + p.name + '">' +
                                 '</a></div>' +
                                 '<div class="product-info">' +
-                                '<div class="product-name"><a href="<%=ctx%>/product/detail?id=' + p.id + '">' + p.name + '</a></div>' +
+                                '<div class="product-name"><a href="${pageContext.request.contextPath}/product/detail?id=' + p.id + '">' + p.name + '</a></div>' +
                                 '<div class="product-desc">精选品质，限时特惠</div>' +
                                 '<div class="product-price-row">' +
                                 '<div class="product-price">￥' + p.price + '</div>' +
