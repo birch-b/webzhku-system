@@ -32,7 +32,12 @@ public class ShopAuthFilter implements Filter {
         HttpSession session = request.getSession();
 
         String requestURI = request.getRequestURI();
-        if (requestURI.endsWith("shop_auditing.jsp") || requestURI.endsWith("shop_closed.jsp")) {
+        String contextPath = request.getContextPath();
+        String path = requestURI.substring(contextPath.length());
+        
+        if (requestURI.endsWith("shop_auditing.jsp") || requestURI.endsWith("shop_closed.jsp")
+                || path.equals("/shop/apply") || path.startsWith("/shop/apply/")
+                || requestURI.endsWith("shop_apply.jsp")) {
             chain.doFilter(req, resp);
             return;
         }

@@ -25,6 +25,7 @@
                 <c:if test="${sessionScope.userRole == 'customer'}">
                     <li><a href="${pageContext.request.contextPath}/cart/list">🛒 购物车</a></li>
                     <li><a href="${pageContext.request.contextPath}/order/list">📋 我的订单</a></li>
+                    <li><a href="${pageContext.request.contextPath}/shop/apply/view">🏪 我要开店</a></li>
                 </c:if>
                 <li class="dropdown">
                     <c:if test="${sessionScope.userRole == 'shopkeeper'}">
