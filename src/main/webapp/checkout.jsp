@@ -13,7 +13,7 @@
 <h4>收货地址</h4>
 <c:choose>
 <c:when test="${empty addresses}">
-<div class="alert alert-warning">没有收货地址，请先<a href="${pageContext.request.contextPath}/customer/address/list">添加地址</a></div>
+<div class="alert alert-warning">没有收货地址，请先<a href="${pageContext.request.contextPath}/address/list">添加地址</a></div>
 </c:when>
 <c:otherwise>
 <c:forEach var="a" items="${addresses}">

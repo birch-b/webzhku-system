@@ -320,11 +320,11 @@ INSERT INTO `category` (`shop_id`, `parent_id`, `name`, `sort_order`, `status`) 
 
 -- ---------- 商品数据 ----------
 INSERT INTO `product` (`shop_id`, `category_id`, `name`, `subtitle`, `description`, `price`, `original_price`, `stock`, `sales`, `status`, `cover_image`, `publish_time`) VALUES
-(1, 3, '旗舰智能手机 Pro Max', '新品上市 限时特惠', '搭载最新处理器，超清屏幕，超长续航。', 5999.00, 6999.00, 100, 25, 1, '/upload/product/phone1.jpg', NOW()),
-(1, 3, '性价比手机', '千元机首选', '大屏幕大电池，日常使用无压力。', 1299.00, 1599.00, 200, 56, 1, '/upload/product/phone2.jpg', NOW()),
-(1, 4, '轻薄平板电脑', '办公娱乐两不误', '10.9英寸屏幕，支持触控笔，轻薄便携。', 3299.00, 3699.00, 80, 12, 1, '/upload/product/tablet1.jpg', NOW()),
-(2, 5, '男士休闲T恤', '夏季新品', '纯棉面料，舒适透气，多色可选。', 99.00, 159.00, 500, 88, 1, '/upload/product/shirt1.jpg', NOW()),
-(2, 6, '女士连衣裙', '气质优雅', '修身显瘦，时尚百搭，约会必备。', 259.00, 399.00, 150, 43, 1, '/upload/product/dress1.jpg', NOW());
+(1, 3, '旗舰智能手机 Pro Max', '新品上市 限时特惠', '搭载最新处理器，超清屏幕，超长续航。', 5999.00, 6999.00, 100, 25, 1, 'https://picsum.photos/seed/1/300/300', NOW()),
+(1, 3, '性价比手机', '千元机首选', '大屏幕大电池，日常使用无压力。', 1299.00, 1599.00, 200, 56, 1, 'https://picsum.photos/seed/2/300/300', NOW()),
+(1, 4, '轻薄平板电脑', '办公娱乐两不误', '10.9英寸屏幕，支持触控笔，轻薄便携。', 3299.00, 3699.00, 80, 12, 1, 'https://picsum.photos/seed/3/300/300', NOW()),
+(2, 5, '男士休闲T恤', '夏季新品', '纯棉面料，舒适透气，多色可选。', 99.00, 159.00, 500, 88, 1, 'https://picsum.photos/seed/4/300/300', NOW()),
+(2, 6, '女士连衣裙', '气质优雅', '修身显瘦，时尚百搭，约会必备。', 259.00, 399.00, 150, 43, 1, 'https://picsum.photos/seed/5/300/300', NOW());
 
 -- ---------- 收货地址数据（组员3演示用） ----------
 INSERT INTO `address` (`user_id`, `receiver_name`, `phone`, `province`, `city`, `district`, `detail`, `is_default`) VALUES

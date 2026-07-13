@@ -24,35 +24,35 @@
             <div class="carousel">
                 <div class="carousel-inner">
                     <div class="slide active">
-                        <img src="https://picsum.photos/1200/400?random=1" alt="Banner1">
+                        <img src="https://picsum.photos/seed/banner1/1200/400" alt="Banner1">
                         <div class="carousel-caption">
                             <h3>欢迎来到淘宝购物系统</h3>
                             <p>海量精选商品，品质保证，无忧购物</p>
                         </div>
                     </div>
                     <div class="slide">
-                        <img src="https://picsum.photos/1200/400?random=2" alt="Banner2">
+                        <img src="https://picsum.photos/seed/banner2/1200/400" alt="Banner2">
                         <div class="carousel-caption">
                             <h3>限时特惠 惊喜不断</h3>
                             <p>每日精选爆款，超低价格等你来抢</p>
                         </div>
                     </div>
                     <div class="slide">
-                        <img src="https://picsum.photos/1200/400?random=3" alt="Banner3">
+                        <img src="https://picsum.photos/seed/banner3/1200/400" alt="Banner3">
                         <div class="carousel-caption">
                             <h3>新品首发 抢先体验</h3>
                             <p>潮流新品第一时间上架，引领时尚前沿</p>
                         </div>
                     </div>
                     <div class="slide">
-                        <img src="https://picsum.photos/1200/400?random=4" alt="Banner4">
+                        <img src="https://picsum.photos/seed/banner4/1200/400" alt="Banner4">
                         <div class="carousel-caption">
                             <h3>品质保障 放心购物</h3>
                             <p>正品保证，七天无理由退换，售后无忧</p>
                         </div>
                     </div>
                     <div class="slide">
-                        <img src="https://picsum.photos/1200/400?random=5" alt="Banner5">
+                        <img src="https://picsum.photos/seed/banner5/1200/400" alt="Banner5">
                         <div class="carousel-caption">
                             <h3>会员专享 超值福利</h3>
                             <p>注册即送优惠券，积分兑换好礼不停</p>
@@ -98,8 +98,8 @@
             </c:if>
             <c:forEach var="prod" items="${requestScope.products}">
                 <c:set var="image" value="${prod.main_image}"/>
-                <c:if test="${empty image or image.startsWith('/upload/')}">
-                    <c:set var="image" value="https://picsum.photos/300/300?random=${prod.id}"/>
+                <c:if test="${empty image or (image != null and image.startsWith('/upload/'))}">
+                    <c:set var="image" value="https://picsum.photos/seed/${prod.id}/300/300"/>
                 </c:if>
                 <div class="product-card">
                     <div class="product-image">
@@ -244,7 +244,7 @@
                     } else {
                         $.each(products, function(index, p) {
                             var image = p.main_image && p.main_image !== '' && !p.main_image.startsWith('/upload/') 
-                                ? p.main_image : 'https://picsum.photos/300/300?random=' + p.id;
+                                ? p.main_image : 'https://picsum.photos/seed/' + p.id + '/300/300';
                             html += '<div class="product-card">' +
                                 '<div class="product-image">' +
                                 '<a href="${pageContext.request.contextPath}/product/detail?id=' + p.id + '">' +

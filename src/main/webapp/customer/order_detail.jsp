@@ -45,7 +45,19 @@
         <c:forEach var="item" items="${orderItems}">
             <tr>
                 <td>${item[1]}</td>
-                <td><c:if test="${not empty item[2]}"><img src="${pageContext.request.contextPath}${item[2]}" style="width:60px;height:60px;object-fit:cover;border-radius:4px;"></c:if></td>
+                <td>
+    <c:choose>
+        <c:when test="${item[2] == null || item[2].isEmpty() || (item[2] != null && item[2].startsWith('/upload/'))}">
+            <img src="https://picsum.photos/seed/${item[0]}/60/60" style="width:60px;height:60px;object-fit:cover;border-radius:4px;">
+        </c:when>
+        <c:when test="${item[2].startsWith('http://') || item[2].startsWith('https://')}">
+            <img src="${item[2]}" style="width:60px;height:60px;object-fit:cover;border-radius:4px;">
+        </c:when>
+        <c:otherwise>
+            <img src="${pageContext.request.contextPath}${item[2]}" style="width:60px;height:60px;object-fit:cover;border-radius:4px;">
+        </c:otherwise>
+    </c:choose>
+</td>
                 <td>￥${item[3]}</td>
                 <td>${item[4]}</td>
                 <td><strong>￥${item[5]}</strong></td>

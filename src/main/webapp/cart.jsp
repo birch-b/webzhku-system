@@ -47,8 +47,8 @@
                         <td>
                             <a href="${pageContext.request.contextPath}/product/detail?id=${ci[1]}">
                                 <c:set var="image" value="${ci[6]}"/>
-                                <c:if test="${empty image or image.startsWith('/upload/')}">
-                                    <c:set var="image" value="https://picsum.photos/60/60?random=${ci[1]}"/>
+                                <c:if test="${empty image or (image != null and image.startsWith('/upload/'))}">
+                                    <c:set var="image" value="https://picsum.photos/seed/${ci[1]}/60/60"/>
                                 </c:if>
                                 <img src="${image}" style="width:60px"> ${ci[2]}
                             </a>
