@@ -30,6 +30,7 @@ public class ShopOrderServlet extends HttpServlet {
         String pathInfo = req.getPathInfo();
         switch (pathInfo != null ? pathInfo : "") {
             case "/ship": shipOrder(req, resp); break;
+            case "/cancel": cancelOrder(req, resp); break;
             default: resp.sendError(404);
         }
     }
@@ -100,6 +101,32 @@ public class ShopOrderServlet extends HttpServlet {
             ps2.setString(4, company); ps2.setString(5, trackingNo); ps2.executeUpdate();
             conn.commit();
             resp.sendRedirect(req.getContextPath() + "/shop/order/list?msg=shipped");
+        } catch (Exception e) { e.printStackTrace(); resp.sendError(500); }
+    }
+
+    private void cancelOrder(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        long orderId = Long.parseLong(req.getParameter("id"));
+        Long userId = (Long) req.getSession().getAttribute("userId");
+        try (Connection conn = DBUtil.getConnection()) {
+            conn.setAutoCommit(false);
+            long shopId = getShopId(userId);
+            PreparedStatement ps1 = conn.prepareStatement("UPDATE `order` SET status = 5 WHERE id = ? AND shop_id = ? AND status = 0");
+            ps1.setLong(1, orderId);
+            ps1.setLong(2, shopId);
+            int rows = ps1.executeUpdate();
+            if (rows > 0) {
+                PreparedStatement ps2 = conn.prepareStatement("SELECT product_id, quantity FROM order_item WHERE order_id = ?");
+                ps2.setLong(1, orderId);
+                ResultSet rs = ps2.executeQuery();
+                while (rs.next()) {
+                    PreparedStatement ps3 = conn.prepareStatement("UPDATE product SET stock = stock + ? WHERE id = ?");
+                    ps3.setInt(1, rs.getInt("quantity"));
+                    ps3.setLong(2, rs.getLong("product_id"));
+                    ps3.executeUpdate();
+                }
+            }
+            conn.commit();
+            resp.sendRedirect(req.getContextPath() + "/shop/order/list?msg=cancelled");
         } catch (Exception e) { e.printStackTrace(); resp.sendError(500); }
     }
 }

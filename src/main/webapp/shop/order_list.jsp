@@ -87,21 +87,21 @@
                                             <%-- ====== 商家专属操作：绝对不能出现支付/收货/评价/申请售后！====== --%>
                                             <%-- 待付款(0)：商家只能关闭订单 --%>
                                             <c:if test="${o[4]=='0'}">
-                                                <form action="${pageContext.request.contextPath}/order/cancel" method="post" style="display:inline">
+                                                <form action="${pageContext.request.contextPath}/shop/order/cancel" method="post" style="display:inline">
                                                     <input type="hidden" name="id" value="${o[0]}">
                                                     <button class="btn btn-warning btn-sm" onclick="return confirm('确认关闭该待付款订单?')">关闭订单</button>
                                                 </form>
                                             </c:if>
                                             <%-- 待发货(1)：商家核心操作——发货 --%>
                                             <c:if test="${o[4]=='1'}">
-                                                <form action="${pageContext.request.contextPath}/order/ship" method="post" style="display:inline">
+                                                <form action="${pageContext.request.contextPath}/shop/order/ship" method="post" style="display:inline">
                                                     <input type="hidden" name="id" value="${o[0]}">
                                                     <button class="btn btn-success btn-sm">🚚 发货</button>
                                                 </form>
                                             </c:if>
                                             <%-- 已发货(2)：商家查看物流 --%>
                                             <c:if test="${o[4]=='2'}">
-                                                <a href="${pageContext.request.contextPath}/logistics/detail?orderId=${o[0]}" class="btn btn-primary btn-sm">📦 物流详情</a>
+                                                <a href="${pageContext.request.contextPath}/shop/order/detail?id=${o[0]}" class="btn btn-primary btn-sm">📦 物流详情</a>
                                             </c:if>
                                             <%-- 已收货(3)/已完成(4)：商家无额外操作，只可查看 --%>
                                         </td>
