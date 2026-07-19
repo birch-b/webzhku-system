@@ -25,6 +25,7 @@ public class ShopDAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("查询店铺信息失败", e);
         }
         return null;
     }
@@ -41,6 +42,7 @@ public class ShopDAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("查询店铺信息失败", e);
         }
         return null;
     }
@@ -62,7 +64,7 @@ public class ShopDAO {
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
+            throw new RuntimeException("更新店铺信息失败", e);
         }
     }
 
@@ -76,7 +78,7 @@ public class ShopDAO {
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
+            throw new RuntimeException("创建店铺失败", e);
         }
     }
 
@@ -92,6 +94,7 @@ public class ShopDAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("查询店铺状态失败", e);
         }
 
         String applySql = "SELECT status FROM shop_apply WHERE user_id = ? ORDER BY id DESC LIMIT 1";
@@ -109,6 +112,7 @@ public class ShopDAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("查询店铺申请状态失败", e);
         }
         return -2;
     }
@@ -140,6 +144,7 @@ public class ShopDAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("查询店铺申请失败", e);
         }
         return null;
     }
@@ -165,7 +170,7 @@ public class ShopDAO {
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
+            throw new RuntimeException("提交店铺申请失败", e);
         }
     }
 
@@ -201,7 +206,7 @@ public class ShopDAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
+            throw new RuntimeException("审核店铺申请失败", e);
         }
     }
 
@@ -238,6 +243,7 @@ public class ShopDAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("查询店铺统计信息失败", e);
         }
         return null;
     }
@@ -257,6 +263,75 @@ public class ShopDAO {
         shop.put("create_time", rs.getTimestamp("create_time"));
         shop.put("update_time", rs.getTimestamp("update_time"));
         return shop;
+    }
+
+    /**
+     * 商家更新店铺信息（包含 shop_category 字段）
+     */
+    public boolean updateShopInfo(long userId, String shopName, String shopCategory, String description, String avatar) {
+        String sql = "UPDATE shop SET shop_name = ?, shop_category = ?, description = ?, avatar = ?, update_time = NOW() WHERE user_id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, shopName);
+            ps.setString(2, shopCategory);
+            ps.setString(3, description);
+            ps.setString(4, avatar);
+            ps.setLong(5, userId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("更新店铺信息失败", e);
+        }
+    }
+
+    /**
+     * 查询店铺头像（用于更新时保留旧头像）
+     */
+    public String getShopAvatarByUserId(long userId) {
+        String sql = "SELECT avatar FROM shop WHERE user_id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getString("avatar");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("查询店铺头像失败", e);
+        }
+        return null;
+    }
+
+    /**
+     * 获取店铺首页KPI数据（实时COUNT，不依赖冗余字段）
+     */
+    public Map<String, Object> getShopKPIs(long shopId) {
+        Map<String, Object> kpis = new HashMap<>();
+        kpis.put("totalProducts", 0);
+        kpis.put("totalOrders", 0);
+        kpis.put("totalReviews", 0);
+        kpis.put("pendingAftersales", 0);
+
+        String[] sqls = {
+            "SELECT COUNT(*) FROM product WHERE shop_id = ?",
+            "SELECT COUNT(*) FROM `order` WHERE shop_id = ?",
+            "SELECT COUNT(*) FROM review WHERE shop_id = ?",
+            "SELECT COUNT(*) FROM aftersale WHERE shop_id = ? AND status < 3"
+        };
+        String[] keys = {"totalProducts", "totalOrders", "totalReviews", "pendingAftersales"};
+
+        for (int i = 0; i < sqls.length; i++) {
+            try (Connection conn = DBUtil.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sqls[i])) {
+                ps.setLong(1, shopId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) kpis.put(keys[i], rs.getInt(1));
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return kpis;
     }
 
     public List<Map<String, Object>> listPendingShopApply() {

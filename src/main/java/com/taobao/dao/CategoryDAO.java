@@ -26,6 +26,7 @@ public class CategoryDAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("查询分类列表失败", e);
         }
         return list;
     }
@@ -43,6 +44,7 @@ public class CategoryDAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("查询分类列表失败", e);
         }
         return list;
     }
@@ -59,6 +61,7 @@ public class CategoryDAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("查询分类失败", e);
         }
         return null;
     }
@@ -74,22 +77,23 @@ public class CategoryDAO {
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
+            throw new RuntimeException("添加分类失败", e);
         }
     }
 
-    public boolean updateCategory(long id, String name, int sortOrder, int status) {
-        String sql = "UPDATE category SET name = ?, sort_order = ?, status = ? WHERE id = ?";
+    public boolean updateCategory(long id, String name, int sortOrder, int status, long shopId) {
+        String sql = "UPDATE category SET name = ?, sort_order = ?, status = ? WHERE id = ? AND shop_id = ?";
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, name);
             ps.setInt(2, sortOrder);
             ps.setInt(3, status);
             ps.setLong(4, id);
+            ps.setLong(5, shopId);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
+            throw new RuntimeException("更新分类失败", e);
         }
     }
 
@@ -101,7 +105,21 @@ public class CategoryDAO {
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
+            throw new RuntimeException("删除分类失败", e);
+        }
+    }
+
+    // 硬删除分类：物理删除（保持原 ShopCategoryServlet 的业务行为，区别于上面的软删除）
+    public boolean deleteCategoryHard(long id, long shopId) {
+        String sql = "DELETE FROM category WHERE id = ? AND shop_id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, id);
+            ps.setLong(2, shopId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("硬删除分类失败", e);
         }
     }
 
@@ -121,6 +139,7 @@ public class CategoryDAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("检查分类名称失败", e);
         }
         return false;
     }

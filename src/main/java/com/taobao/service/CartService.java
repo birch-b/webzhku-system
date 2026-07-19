@@ -33,13 +33,15 @@ public interface CartService {
 
     /**
      * 更新购物车单项数量（qty <= 0 则删除该项）
+     * @param userId   当前登录用户ID，用于归属校验，防止 IDOR 越权
      */
-    void updateCart(Long cartId, int quantity);
+    void updateCart(Long cartId, Long userId, int quantity);
 
     /**
      * 删除购物车单项
+     * @param userId   当前登录用户ID，用于归属校验，防止 IDOR 越权
      */
-    void deleteCart(Long cartId);
+    void deleteCart(Long cartId, Long userId);
 
     /**
      * 全选 / 全不选（按用户ID批量 UPDATE）
@@ -49,6 +51,7 @@ public interface CartService {
 
     /**
      * 切换单个购物车项的选中状态（IF(selected=1,0,1)）
+     * @param userId   当前登录用户ID，用于归属校验，防止 IDOR 越权
      */
-    void toggleSelect(Long cartId);
+    void toggleSelect(Long cartId, Long userId);
 }

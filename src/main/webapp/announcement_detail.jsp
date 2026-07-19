@@ -1,11 +1,12 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${announcement.title} - 公告详情 - 淘宝购物系统</title>
+    <title><c:out value="${announcement.title}"/> - 公告详情 - 淘宝购物系统</title>
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/bootstrap/3.3.7/css/bootstrap.min.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
     <style>
@@ -33,14 +34,14 @@
                                 <c:if test="${announcement.priority == 1}">
                                     <span class="priority-badge">[重要]</span>
                                 </c:if>
-                                ${announcement.title}
+                                <c:out value="${announcement.title}"/>
                             </div>
                             <div class="announcement-meta">
                                 <span>发布时间：<fmt:formatDate value="${announcement.publishedAt}" pattern="yyyy-MM-dd HH:mm"/></span>
                                 <span>发布者：平台管理员</span>
                             </div>
                             <div class="announcement-content">
-                                ${announcement.content}
+                                <c:out value="${announcement.content}"/>
                             </div>
                         </c:when>
                         <c:otherwise>

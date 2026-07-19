@@ -37,4 +37,19 @@ public interface ShopService {
 
     // 获取用户的申请信息
     Map<String, Object> getApplyByUserId(Long userId);
+
+    // 根据用户ID查询店铺信息（含shopId）
+    Map<String, Object> getShopByUserId(Long userId);
+
+    // 根据用户ID获取shopId（无店铺返回0）
+    long getShopIdByUserId(Long userId);
+
+    // 商家更新店铺信息
+    boolean updateShopInfo(Long userId, String shopName, String shopCategory, String description, String avatar);
+
+    // 获取店铺旧头像
+    String getShopAvatarByUserId(Long userId);
+
+    // 获取店铺首页KPI数据
+    Map<String, Object> getShopKPIs(long shopId);
 }

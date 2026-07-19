@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head><meta charset="UTF-8"><title>确认订单</title>
@@ -31,7 +32,7 @@ ${a[1]} ${a[2]} ${a[3]} <c:if test="${a[4]=='1'}"><span class="label label-prima
 <h4>商品清单</h4>
 <table class="table"><thead><tr><th>商品</th><th>单价</th><th>数量</th><th>小计</th></tr></thead>
 <tbody><c:forEach var="it" items="${checkoutItems}"><tr>
-<td>${it[1]}</td><td>￥${it[2]}</td><td>${it[3]}</td><td>￥${it[4]}</td>
+<td><c:out value="${it[1]}"/></td><td>￥${it[2]}</td><td>${it[3]}</td><td>￥${it[4]}</td>
 </tr></c:forEach></tbody></table>
 <h3 class="text-right">总计: ￥${totalAmount}</h3>
 <c:if test="${not empty addresses}">

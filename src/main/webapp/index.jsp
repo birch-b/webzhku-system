@@ -15,7 +15,7 @@
 
     <div class="announcement-bar">
         <c:forEach var="ann" items="${requestScope.announcements}">
-            <a href="${pageContext.request.contextPath}/announcement/detail?id=${ann.id}">${ann.title}</a>
+            <a href="${pageContext.request.contextPath}/announcement/detail?id=${ann.id}"><c:out value="${ann.title}"/></a>
         </c:forEach>
     </div>
 
@@ -86,7 +86,7 @@
         <div class="section-header">
             <h2>
                 <c:choose>
-                    <c:when test="${not empty requestScope.selectedCategory}">${requestScope.selectedCategory}</c:when>
+                    <c:when test="${not empty requestScope.selectedCategory}"><c:out value="${requestScope.selectedCategory}"/></c:when>
                     <c:otherwise>全部商品</c:otherwise>
                 </c:choose>
             </h2>
@@ -104,11 +104,11 @@
                 <div class="product-card">
                     <div class="product-image">
                         <a href="${pageContext.request.contextPath}/product/detail?id=${prod.id}">
-                            <img src="${image}" alt="${prod.name}">
+                            <img src="${image}" alt="<c:out value='${prod.name}'/>">
                         </a>
                     </div>
                     <div class="product-info">
-                        <div class="product-name"><a href="${pageContext.request.contextPath}/product/detail?id=${prod.id}">${prod.name}</a></div>
+                        <div class="product-name"><a href="${pageContext.request.contextPath}/product/detail?id=${prod.id}"><c:out value="${prod.name}"/></a></div>
                         <div class="product-desc">精选品质，限时特惠</div>
                         <div class="product-price-row">
                             <div class="product-price">

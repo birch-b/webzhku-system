@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -16,7 +17,7 @@
         <div class="alert alert-warning">
             <c:choose>
                 <c:when test="${param.msg == 'offshelf'}">该商品已下架，无法加入购物车</c:when>
-                <c:otherwise>${param.msg}</c:otherwise>
+                <c:otherwise><c:out value="${param.msg}"/></c:otherwise>
             </c:choose>
         </div>
     </c:if>
@@ -50,7 +51,7 @@
                                 <c:if test="${empty image or (image != null and image.startsWith('/upload/'))}">
                                     <c:set var="image" value="https://picsum.photos/seed/${ci[1]}/60/60"/>
                                 </c:if>
-                                <img src="${image}" style="width:60px"> ${ci[2]}
+                                <img src="${image}" style="width:60px"> <c:out value="${ci[2]}"/>
                             </a>
                         </td>
                         <td>￥${ci[3]}</td>

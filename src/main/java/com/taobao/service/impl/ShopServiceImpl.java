@@ -68,4 +68,32 @@ public class ShopServiceImpl implements ShopService {
     public Map<String, Object> getApplyByUserId(Long userId) {
         return shopDAO.getApplyByUserId(userId);
     }
+
+    @Override
+    public Map<String, Object> getShopByUserId(Long userId) {
+        return shopDAO.getShopByUserId(userId);
+    }
+
+    @Override
+    public long getShopIdByUserId(Long userId) {
+        Map<String, Object> shop = shopDAO.getShopByUserId(userId);
+        if (shop == null) return 0;
+        Object id = shop.get("id");
+        return id == null ? 0 : ((Number) id).longValue();
+    }
+
+    @Override
+    public boolean updateShopInfo(Long userId, String shopName, String shopCategory, String description, String avatar) {
+        return shopDAO.updateShopInfo(userId, shopName, shopCategory, description, avatar);
+    }
+
+    @Override
+    public String getShopAvatarByUserId(Long userId) {
+        return shopDAO.getShopAvatarByUserId(userId);
+    }
+
+    @Override
+    public Map<String, Object> getShopKPIs(long shopId) {
+        return shopDAO.getShopKPIs(shopId);
+    }
 }

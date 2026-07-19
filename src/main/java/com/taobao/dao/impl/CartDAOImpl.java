@@ -75,18 +75,22 @@ public class CartDAOImpl implements CartDAO {
     }
 
     @Override
-    public void update(Long cartId, int quantity) {
+    public void update(Long cartId, Long userId, int quantity) {
+        // 修复 IDOR：WHERE 同时校验 user_id，避免越权改他人购物车
         try (Connection conn = DBUtil.getConnection()) {
             if (quantity <= 0) {
-                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM cart_item WHERE id = ?")) {
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "DELETE FROM cart_item WHERE id = ? AND user_id = ?")) {
                     ps.setLong(1, cartId);
+                    ps.setLong(2, userId);
                     ps.executeUpdate();
                 }
             } else {
                 try (PreparedStatement ps = conn.prepareStatement(
-                        "UPDATE cart_item SET quantity = ? WHERE id = ?")) {
+                        "UPDATE cart_item SET quantity = ? WHERE id = ? AND user_id = ?")) {
                     ps.setInt(1, quantity);
                     ps.setLong(2, cartId);
+                    ps.setLong(3, userId);
                     ps.executeUpdate();
                 }
             }
@@ -97,10 +101,13 @@ public class CartDAOImpl implements CartDAO {
     }
 
     @Override
-    public void delete(Long cartId) {
+    public void delete(Long cartId, Long userId) {
+        // 修复 IDOR：WHERE 同时校验 user_id，避免越权删他人购物车
         try (Connection conn = DBUtil.getConnection();
-             PreparedStatement ps = conn.prepareStatement("DELETE FROM cart_item WHERE id = ?")) {
+             PreparedStatement ps = conn.prepareStatement(
+                     "DELETE FROM cart_item WHERE id = ? AND user_id = ?")) {
             ps.setLong(1, cartId);
+            ps.setLong(2, userId);
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -123,11 +130,13 @@ public class CartDAOImpl implements CartDAO {
     }
 
     @Override
-    public void toggleSelect(Long cartId) {
+    public void toggleSelect(Long cartId, Long userId) {
+        // 修复 IDOR：WHERE 同时校验 user_id，避免越权切换他人购物车选中状态
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(
-                     "UPDATE cart_item SET selected = IF(selected=1, 0, 1) WHERE id = ?")) {
+                     "UPDATE cart_item SET selected = IF(selected=1, 0, 1) WHERE id = ? AND user_id = ?")) {
             ps.setLong(1, cartId);
+            ps.setLong(2, userId);
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();

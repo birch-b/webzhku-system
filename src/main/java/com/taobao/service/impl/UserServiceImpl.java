@@ -80,4 +80,35 @@ public class UserServiceImpl implements UserService {
     public void updateUserRole(Long userId, String newRole) {
         userDAO.updateRole(userId, newRole);
     }
+
+    @Override
+    public Map<String, Object> getProfile(Long userId) {
+        // 查询用户个人信息，委托给DAO
+        return userDAO.getProfileById(userId);
+    }
+
+    @Override
+    public void updateProfile(Long userId, String nickname, String phone, String email) {
+        // 更新个人信息，委托给DAO
+        userDAO.updateProfile(userId, nickname, phone, email);
+    }
+
+    @Override
+    public boolean changePassword(Long userId, String oldPassword, String newPassword) {
+        // 修改密码：先验证原密码，验证通过后再更新
+        String dbPassword = userDAO.getPasswordById(userId);
+        if (dbPassword == null) {
+            // 用户不存在
+            return false;
+        }
+        // 验证原密码（BCrypt 每次加密生成不同盐，必须用 verify 比较）
+        if (!MD5Util.verify(oldPassword, dbPassword)) {
+            // 原密码错误
+            return false;
+        }
+        // 更新新密码
+        String newHash = MD5Util.encrypt(newPassword);
+        userDAO.updatePassword(userId, newHash);
+        return true;
+    }
 }

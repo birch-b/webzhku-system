@@ -45,4 +45,21 @@ public interface UserService {
     String getRoleText(String role);
     // 状态中文文本转换
     String getStatusText(int status);
+
+    // ========== 个人中心相关方法 ==========
+    /**
+     * 查询用户个人信息
+     */
+    Map<String, Object> getProfile(Long userId);
+
+    /**
+     * 更新个人信息（昵称、手机、邮箱）
+     */
+    void updateProfile(Long userId, String nickname, String phone, String email);
+
+    /**
+     * 修改密码（含原密码验证）
+     * 验证通过返回 true，失败返回 false
+     */
+    boolean changePassword(Long userId, String oldPassword, String newPassword);
 }

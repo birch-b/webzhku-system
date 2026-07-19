@@ -188,4 +188,79 @@ public class UserDAOImpl implements UserDAO {
             throw new RuntimeException("修改用户角色失败", e);
         }
     }
+
+    @Override
+    public Map<String, Object> getProfileById(Long userId) {
+        // 查询用户个人信息（username, nickname, phone, email）
+        Map<String, Object> profile = null;
+        String sql = "SELECT username, nickname, phone, email FROM user WHERE id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    profile = new HashMap<>();
+                    profile.put("username", rs.getString("username"));
+                    profile.put("nickname", rs.getString("nickname"));
+                    profile.put("phone", rs.getString("phone"));
+                    profile.put("email", rs.getString("email"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("查询用户个人信息失败", e);
+        }
+        return profile;
+    }
+
+    @Override
+    public void updateProfile(Long userId, String nickname, String phone, String email) {
+        // 更新个人信息（昵称、手机、邮箱）
+        String sql = "UPDATE user SET nickname = ?, phone = ?, email = ? WHERE id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, nickname);
+            ps.setString(2, phone);
+            ps.setString(3, email);
+            ps.setLong(4, userId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("更新个人信息失败", e);
+        }
+    }
+
+    @Override
+    public String getPasswordById(Long userId) {
+        // 查询用户当前密码（用于修改密码时验证原密码）
+        String sql = "SELECT password FROM user WHERE id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("password");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("查询用户密码失败", e);
+        }
+        return null;
+    }
+
+    @Override
+    public void updatePassword(Long userId, String newMd5Pwd) {
+        // 更新用户密码
+        String sql = "UPDATE user SET password = ? WHERE id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, newMd5Pwd);
+            ps.setLong(2, userId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("更新用户密码失败", e);
+        }
+    }
 }

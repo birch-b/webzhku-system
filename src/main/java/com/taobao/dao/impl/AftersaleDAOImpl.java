@@ -152,4 +152,185 @@ public class AftersaleDAOImpl implements AftersaleDAO {
         }
         return aftersale;
     }
+
+    // ========== 商家端方法实现 ==========
+
+    @Override
+    public List<Map<String, Object>> listShopAftersales(Long shopId, Integer statusFilter) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+                "SELECT a.*, o.order_no, u.username, u.nickname, u.phone, " +
+                "o.receiver_name, o.receiver_phone, o.receiver_address " +
+                "FROM aftersale a " +
+                "LEFT JOIN `order` o ON a.order_id = o.id " +
+                "LEFT JOIN user u ON a.user_id = u.id " +
+                "WHERE o.shop_id = ? ");
+        if (statusFilter != null) {
+            sql.append("AND a.status = ? ");
+        }
+        sql.append("ORDER BY a.create_time DESC");
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            int idx = 1;
+            ps.setLong(idx++, shopId);
+            if (statusFilter != null) {
+                ps.setInt(idx++, statusFilter);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> aftersale = new HashMap<>();
+                    aftersale.put("id", rs.getLong("id"));
+                    aftersale.put("orderId", rs.getLong("order_id"));
+                    aftersale.put("orderNo", rs.getString("order_no"));
+                    aftersale.put("userId", rs.getLong("user_id"));
+                    aftersale.put("username", rs.getString("username"));
+                    aftersale.put("nickname", rs.getString("nickname"));
+                    aftersale.put("phone", rs.getString("phone"));
+                    aftersale.put("type", rs.getInt("type"));
+                    aftersale.put("reason", rs.getString("reason"));
+                    aftersale.put("amount", rs.getBigDecimal("amount"));
+                    aftersale.put("description", rs.getString("description"));
+                    aftersale.put("status", rs.getInt("status"));
+                    aftersale.put("shopReply", rs.getString("shop_reply"));
+                    aftersale.put("createTime", rs.getTimestamp("create_time"));
+                    aftersale.put("handleTime", rs.getTimestamp("handle_time"));
+                    aftersale.put("receiverName", rs.getString("receiver_name"));
+                    aftersale.put("receiverPhone", rs.getString("receiver_phone"));
+                    aftersale.put("receiverAddress", rs.getString("receiver_address"));
+                    list.add(aftersale);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("加载售后列表失败", e);
+        }
+        return list;
+    }
+
+    @Override
+    public Map<String, Object> getShopAftersaleDetail(Long id, Long shopId) {
+        Map<String, Object> aftersale = null;
+        String sql = "SELECT a.*, o.order_no, o.pay_method, u.username, u.nickname, u.phone, " +
+                "o.receiver_name, o.receiver_phone, o.receiver_address " +
+                "FROM aftersale a " +
+                "LEFT JOIN `order` o ON a.order_id = o.id " +
+                "LEFT JOIN user u ON a.user_id = u.id " +
+                "WHERE a.id = ? AND o.shop_id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, id);
+            ps.setLong(2, shopId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    aftersale = new HashMap<>();
+                    aftersale.put("id", rs.getLong("id"));
+                    aftersale.put("orderId", rs.getLong("order_id"));
+                    aftersale.put("orderNo", rs.getString("order_no"));
+                    aftersale.put("payMethod", rs.getInt("pay_method"));
+                    aftersale.put("userId", rs.getLong("user_id"));
+                    aftersale.put("username", rs.getString("username"));
+                    aftersale.put("nickname", rs.getString("nickname"));
+                    aftersale.put("phone", rs.getString("phone"));
+                    aftersale.put("type", rs.getInt("type"));
+                    aftersale.put("reason", rs.getString("reason"));
+                    aftersale.put("description", rs.getString("description"));
+                    aftersale.put("amount", rs.getBigDecimal("amount"));
+                    aftersale.put("status", rs.getInt("status"));
+                    aftersale.put("shopReply", rs.getString("shop_reply"));
+                    aftersale.put("createTime", rs.getTimestamp("create_time"));
+                    aftersale.put("handleTime", rs.getTimestamp("handle_time"));
+                    aftersale.put("receiverName", rs.getString("receiver_name"));
+                    aftersale.put("receiverPhone", rs.getString("receiver_phone"));
+                    aftersale.put("receiverAddress", rs.getString("receiver_address"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("加载售后详情失败", e);
+        }
+        return aftersale;
+    }
+
+    @Override
+    public void approveAftersale(Long id, Long shopId, String reply) {
+        // aftersale 表无 shop_id 字段，通过 order 子查询校验店铺归属，防止越权
+        String sql = "UPDATE aftersale SET status = 1, shop_reply = ?, handle_time = NOW() " +
+                "WHERE id = ? AND order_id IN (SELECT id FROM `order` WHERE shop_id = ?)";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, reply);
+            ps.setLong(2, id);
+            ps.setLong(3, shopId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("同意售后申请失败", e);
+        }
+    }
+
+    @Override
+    public void rejectAftersale(Long id, Long shopId, String rejectReason) {
+        try (Connection conn = DBUtil.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                // 通过 order 子查询校验店铺归属，防止越权
+                String updateAftersaleSql = "UPDATE aftersale SET status = 2, shop_reply = ?, handle_time = NOW() " +
+                        "WHERE id = ? AND order_id IN (SELECT id FROM `order` WHERE shop_id = ?)";
+                try (PreparedStatement ps = conn.prepareStatement(updateAftersaleSql)) {
+                    ps.setString(1, rejectReason);
+                    ps.setLong(2, id);
+                    ps.setLong(3, shopId);
+                    ps.executeUpdate();
+                }
+
+                String updateOrderSql = "UPDATE `order` SET status = 4 WHERE id = (SELECT order_id FROM aftersale WHERE id = ?)";
+                try (PreparedStatement ps2 = conn.prepareStatement(updateOrderSql)) {
+                    ps2.setLong(1, id);
+                    ps2.executeUpdate();
+                }
+
+                conn.commit();
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("拒绝售后申请失败", e);
+        }
+    }
+
+    @Override
+    public void refundAftersale(Long id, Long shopId) {
+        try (Connection conn = DBUtil.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                // 通过 order 子查询校验店铺归属，防止越权
+                String updateAftersaleSql = "UPDATE aftersale SET status = 3, handle_time = NOW() " +
+                        "WHERE id = ? AND status = 1 AND order_id IN (SELECT id FROM `order` WHERE shop_id = ?)";
+                int updated;
+                try (PreparedStatement ps = conn.prepareStatement(updateAftersaleSql)) {
+                    ps.setLong(1, id);
+                    ps.setLong(2, shopId);
+                    updated = ps.executeUpdate();
+                }
+
+                if (updated > 0) {
+                    String updateOrderSql = "UPDATE `order` SET status = 7 WHERE id = (SELECT order_id FROM aftersale WHERE id = ?)";
+                    try (PreparedStatement ps2 = conn.prepareStatement(updateOrderSql)) {
+                        ps2.setLong(1, id);
+                        ps2.executeUpdate();
+                    }
+                }
+
+                conn.commit();
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("退款处理失败", e);
+        }
+    }
 }

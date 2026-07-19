@@ -1,4 +1,5 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <nav class="navbar">
     <div class="container">
         <a class="navbar-brand" href="${pageContext.request.contextPath}/">淘宝购物系统</a>
@@ -30,11 +31,11 @@
                 <li class="dropdown">
                     <c:if test="${sessionScope.userRole == 'shopkeeper'}">
                         <a href="#" class="shopkeeper-nav-link">
-                            👤 ${sessionScope.shopName != null ? sessionScope.shopName : sessionScope.nickname != null ? sessionScope.nickname : '用户'} ▾
+                            👤 <c:out value="${sessionScope.shopName != null ? sessionScope.shopName : sessionScope.nickname != null ? sessionScope.nickname : '用户'}"/> ▾
                         </a>
                     </c:if>
                     <c:if test="${sessionScope.userRole != 'shopkeeper'}">
-                        <a href="#">👤 ${sessionScope.nickname != null ? sessionScope.nickname : '用户'} ▾</a>
+                        <a href="#">👤 <c:out value="${sessionScope.nickname != null ? sessionScope.nickname : '用户'}"/> ▾</a>
                     </c:if>
                     <ul class="dropdown-menu">
                         <c:if test="${sessionScope.userRole == 'customer'}">

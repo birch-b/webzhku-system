@@ -62,4 +62,64 @@ public class OrderServiceImpl implements OrderService {
     public List<Map<String, Object>> listOrderItemByOrderId(Long orderId) {
         return orderDAO.listOrderItemByOrderId(orderId);
     }
+
+    @Override
+    public Map<String, Object> getCheckoutData(Long userId) {
+        return orderDAO.getCheckoutData(userId);
+    }
+
+    @Override
+    public long createOrder(Long userId, Long addressId, String buyerMessage) {
+        return orderDAO.createOrder(userId, addressId, buyerMessage);
+    }
+
+    @Override
+    public Map<String, Object> listUserOrders(Long userId, String status, int page, int pageSize) {
+        return orderDAO.listUserOrders(userId, status, page, pageSize);
+    }
+
+    @Override
+    public Map<String, Object> getUserOrderDetail(Long orderId, Long userId) {
+        return orderDAO.getUserOrderDetail(orderId, userId);
+    }
+
+    @Override
+    public void cancelOrder(Long orderId, Long userId) {
+        orderDAO.cancelOrder(orderId, userId);
+    }
+
+    @Override
+    public void confirmOrder(Long orderId, Long userId) {
+        orderDAO.confirmOrder(orderId, userId);
+    }
+
+    @Override
+    public boolean payOrder(Long orderId, Long userId, int payMethod) {
+        return orderDAO.payOrder(orderId, userId, payMethod);
+    }
+
+    @Override
+    public List<Map<String, Object>> listShopOrders(Long shopId, Integer status) {
+        return orderDAO.listShopOrders(shopId, status);
+    }
+
+    @Override
+    public Map<String, Object> getShopOrderDetail(Long orderId, Long shopId) {
+        return orderDAO.getShopOrderDetail(orderId, shopId);
+    }
+
+    @Override
+    public List<Map<String, Object>> getOrderItemsByOrderId(Long orderId) {
+        return orderDAO.getOrderItemsByOrderId(orderId);
+    }
+
+    @Override
+    public void shipOrder(Long orderId, Long shopId, String company, String trackingNo) {
+        orderDAO.shipOrder(orderId, shopId, company, trackingNo);
+    }
+
+    @Override
+    public void cancelShopOrder(Long orderId, Long shopId) {
+        orderDAO.cancelShopOrder(orderId, shopId);
+    }
 }

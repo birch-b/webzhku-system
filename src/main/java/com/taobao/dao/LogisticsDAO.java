@@ -14,27 +14,22 @@ import com.taobao.util.DBUtil;
  */
 public class LogisticsDAO {
 
-    private Connection conn;
-    private PreparedStatement ps;
-    private ResultSet rs;
-
     /**
      * 根据订单ID查询物流信息
      */
     public Map<String, Object> getLogisticsByOrderId(long orderId) {
         String sql = "SELECT * FROM logistics WHERE order_id = ?";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, orderId);
-            rs = ps.executeQuery();
-            if (rs.next()) {
-                return extractLogistics(rs);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return extractLogistics(rs);
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            DBUtil.close(conn, ps, rs);
+            throw new RuntimeException("查询物流信息失败", e);
         }
         return null;
     }
@@ -47,9 +42,8 @@ public class LogisticsDAO {
         String sql = "INSERT INTO logistics (order_id, company, tracking_no, receiver_name, " +
                      "receiver_phone, receiver_address, status, ship_time) " +
                      "VALUES (?, ?, ?, ?, ?, ?, 0, NOW())";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, orderId);
             ps.setString(2, company);
             ps.setString(3, trackingNo);
@@ -59,9 +53,7 @@ public class LogisticsDAO {
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
-        } finally {
-            DBUtil.close(conn, ps);
+            throw new RuntimeException("创建物流记录失败", e);
         }
     }
 
@@ -72,18 +64,15 @@ public class LogisticsDAO {
         String sql = "UPDATE logistics SET company = ?, tracking_no = ?, status = 1, " +
                      "ship_time = COALESCE(ship_time, NOW()), update_time = NOW() " +
                      "WHERE order_id = ?";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, company);
             ps.setString(2, trackingNo);
             ps.setLong(3, orderId);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
-        } finally {
-            DBUtil.close(conn, ps);
+            throw new RuntimeException("更新物流信息失败", e);
         }
     }
 
@@ -92,17 +81,14 @@ public class LogisticsDAO {
      */
     public boolean updateStatus(long orderId, int status) {
         String sql = "UPDATE logistics SET status = ?, update_time = NOW() WHERE order_id = ?";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, status);
             ps.setLong(2, orderId);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
-        } finally {
-            DBUtil.close(conn, ps);
+            throw new RuntimeException("更新物流状态失败", e);
         }
     }
 
@@ -111,16 +97,15 @@ public class LogisticsDAO {
      */
     public boolean exists(long orderId) {
         String sql = "SELECT COUNT(*) FROM logistics WHERE order_id = ?";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, orderId);
-            rs = ps.executeQuery();
-            if (rs.next()) return rs.getInt(1) > 0;
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1) > 0;
+            }
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            DBUtil.close(conn, ps, rs);
+            throw new RuntimeException("查询物流记录是否存在失败", e);
         }
         return false;
     }
@@ -142,9 +127,5 @@ public class LogisticsDAO {
         l.put("create_time", rs.getTimestamp("create_time"));
         l.put("update_time", rs.getTimestamp("update_time"));
         return l;
-    }
-
-    public void close() {
-        DBUtil.close(conn, ps, rs);
     }
 }

@@ -47,13 +47,13 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public void updateCart(Long cartId, int quantity) {
-        cartDAO.update(cartId, quantity);
+    public void updateCart(Long cartId, Long userId, int quantity) {
+        cartDAO.update(cartId, userId, quantity);
     }
 
     @Override
-    public void deleteCart(Long cartId) {
-        cartDAO.delete(cartId);
+    public void deleteCart(Long cartId, Long userId) {
+        cartDAO.delete(cartId, userId);
     }
 
     @Override
@@ -62,7 +62,7 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public void toggleSelect(Long cartId) {
-        cartDAO.toggleSelect(cartId);
+    public void toggleSelect(Long cartId, Long userId) {
+        cartDAO.toggleSelect(cartId, userId);
     }
 }
