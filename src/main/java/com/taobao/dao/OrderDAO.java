@@ -11,18 +11,8 @@ import java.util.Map;
 
 import com.taobao.util.DBUtil;
 
-/**
- * 商家订单数据访问层
- */
 public class OrderDAO {
 
-    private Connection conn;
-    private PreparedStatement ps;
-    private ResultSet rs;
-
-    /**
-     * 分页查询店铺订单（按状态筛选）
-     */
     public List<Map<String, Object>> getOrdersByShopId(long shopId, Integer status, int page, int pageSize) {
         List<Map<String, Object>> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder("SELECT o.*, u.nickname as buyer_nickname ");
@@ -31,184 +21,138 @@ public class OrderDAO {
         if (status != null) sql.append("AND o.status = ? ");
         sql.append("ORDER BY o.create_time DESC LIMIT ? OFFSET ?");
 
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql.toString());
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
             int idx = 1;
             ps.setLong(idx++, shopId);
             if (status != null) ps.setInt(idx++, status);
             ps.setInt(idx++, pageSize);
             ps.setInt(idx++, (page - 1) * pageSize);
-            rs = ps.executeQuery();
-            while (rs.next()) {
-                Map<String, Object> order = extractOrder(rs);
-                // 查询订单商品明细
-                order.put("items", getOrderItems(rs.getLong("id")));
-                list.add(order);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> order = extractOrder(rs);
+                    order.put("items", getOrderItems(conn, rs.getLong("id")));
+                    list.add(order);
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            DBUtil.close(conn, ps, rs);
         }
         return list;
     }
 
-    /**
-     * 查询订单总数
-     */
     public int getOrderCount(long shopId, Integer status) {
         String sql = status != null
             ? "SELECT COUNT(*) FROM `order` WHERE shop_id = ? AND status = ?"
             : "SELECT COUNT(*) FROM `order` WHERE shop_id = ?";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, shopId);
             if (status != null) ps.setInt(2, status);
-            rs = ps.executeQuery();
-            if (rs.next()) return rs.getInt(1);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            DBUtil.close(conn, ps, rs);
         }
         return 0;
     }
 
-    /**
-     * 根据订单ID查询订单
-     */
     public Map<String, Object> getOrderById(long orderId) {
         String sql = "SELECT o.*, u.nickname as buyer_nickname, u.phone as buyer_phone " +
                      "FROM `order` o LEFT JOIN `user` u ON o.user_id = u.id WHERE o.id = ?";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, orderId);
-            rs = ps.executeQuery();
-            if (rs.next()) {
-                Map<String, Object> order = extractOrder(rs);
-                order.put("items", getOrderItems(orderId));
-                return order;
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Map<String, Object> order = extractOrder(rs);
+                    order.put("items", getOrderItems(conn, orderId));
+                    return order;
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            DBUtil.close(conn, ps, rs);
         }
         return null;
     }
 
-    /**
-     * 查询订单商品明细
-     */
-    private List<Map<String, Object>> getOrderItems(long orderId) {
+    private List<Map<String, Object>> getOrderItems(Connection conn, long orderId) throws SQLException {
         List<Map<String, Object>> items = new ArrayList<>();
         String sql = "SELECT * FROM order_item WHERE order_id = ?";
-        try {
-            PreparedStatement ps2 = conn.prepareStatement(sql);
+        try (PreparedStatement ps2 = conn.prepareStatement(sql)) {
             ps2.setLong(1, orderId);
-            ResultSet rs2 = ps2.executeQuery();
-            while (rs2.next()) {
-                Map<String, Object> item = new HashMap<>();
-                item.put("id", rs2.getLong("id"));
-                item.put("order_id", rs2.getLong("order_id"));
-                item.put("product_id", rs2.getLong("product_id"));
-                item.put("product_name", rs2.getString("product_name"));
-                item.put("cover_image", rs2.getString("cover_image"));
-                item.put("price", rs2.getDouble("price"));
-                item.put("quantity", rs2.getInt("quantity"));
-                item.put("subtotal", rs2.getDouble("subtotal"));
-                items.add(item);
+            try (ResultSet rs2 = ps2.executeQuery()) {
+                while (rs2.next()) {
+                    Map<String, Object> item = new HashMap<>();
+                    item.put("id", rs2.getLong("id"));
+                    item.put("order_id", rs2.getLong("order_id"));
+                    item.put("product_id", rs2.getLong("product_id"));
+                    item.put("product_name", rs2.getString("product_name"));
+                    item.put("cover_image", rs2.getString("cover_image"));
+                    item.put("price", rs2.getDouble("price"));
+                    item.put("quantity", rs2.getInt("quantity"));
+                    item.put("subtotal", rs2.getDouble("subtotal"));
+                    items.add(item);
+                }
             }
-            rs2.close();
-            ps2.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
         return items;
     }
 
-    /**
-     * 发货（更新订单状态 + 创建物流记录）
-     */
     public boolean shipOrder(long orderId) {
         String sql = "UPDATE `order` SET status = 2, ship_time = NOW() WHERE id = ? AND status = 1";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, orderId);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
-        } finally {
-            DBUtil.close(conn, ps);
         }
     }
 
-    /**
-     * 确认收货
-     */
     public boolean confirmReceive(long orderId) {
         String sql = "UPDATE `order` SET status = 3, receive_time = NOW() WHERE id = ? AND status = 2";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, orderId);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
-        } finally {
-            DBUtil.close(conn, ps);
         }
     }
 
-    /**
-     * 完成订单
-     */
     public boolean finishOrder(long orderId) {
         String sql = "UPDATE `order` SET status = 4, finish_time = NOW() WHERE id = ? AND status = 3";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, orderId);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
-        } finally {
-            DBUtil.close(conn, ps);
         }
     }
 
-    /**
-     * 获取各状态订单数量（统计）
-     */
     public Map<String, Integer> getOrderStats(long shopId) {
         Map<String, Integer> stats = new HashMap<>();
         String sql = "SELECT status, COUNT(*) as cnt FROM `order` WHERE shop_id = ? GROUP BY status";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, shopId);
-            rs = ps.executeQuery();
-            while (rs.next()) {
-                stats.put("status_" + rs.getInt("status"), rs.getInt("cnt"));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    stats.put("status_" + rs.getInt("status"), rs.getInt("cnt"));
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            DBUtil.close(conn, ps, rs);
         }
         return stats;
     }
 
-    /**
-     * 从ResultSet提取订单信息
-     */
     private Map<String, Object> extractOrder(ResultSet rs) throws SQLException {
         Map<String, Object> order = new HashMap<>();
         order.put("id", rs.getLong("id"));
@@ -233,7 +177,153 @@ public class OrderDAO {
         return order;
     }
 
-    public void close() {
-        DBUtil.close(conn, ps, rs);
+    public List<Map<String, Object>> listAllOrder(String status, String keyword, int page) {
+        List<Map<String, Object>> orders = new ArrayList<>();
+        String sql = "SELECT o.*, u.nickname AS buyer_name, s.shop_name FROM `order` o " +
+                "LEFT JOIN user u ON o.user_id = u.id " +
+                "LEFT JOIN shop s ON o.shop_id = s.id WHERE 1=1";
+        List<Object> params = new ArrayList<>();
+        if (status != null && !status.isEmpty()) {
+            sql += " AND o.status = ?";
+            params.add(Integer.parseInt(status));
+        }
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            String kw = "%" + keyword.trim() + "%";
+            sql += " AND (o.order_no LIKE ? OR u.nickname LIKE ?)";
+            params.add(kw);
+            params.add(kw);
+        }
+        sql += " ORDER BY o.create_time DESC LIMIT ?, 20";
+        params.add((page - 1) * 20);
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            for (int i = 0; i < params.size(); i++) {
+                ps.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("id", rs.getLong("id"));
+                    m.put("orderNo", rs.getString("order_no"));
+                    m.put("buyerName", rs.getString("buyer_name"));
+                    m.put("shopName", rs.getString("shop_name"));
+                    m.put("totalAmount", rs.getBigDecimal("total_amount"));
+                    m.put("payAmount", rs.getBigDecimal("pay_amount"));
+                    m.put("status", rs.getInt("status"));
+                    m.put("createTime", rs.getTimestamp("create_time"));
+                    orders.add(m);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("查询订单列表失败", e);
+        }
+        return orders;
+    }
+
+    public List<Map<String, Object>> listAbnormalOrder(String keyword, int page) {
+        List<Map<String, Object>> orders = new ArrayList<>();
+        String sql = "SELECT o.*, u.nickname AS buyer_name, s.shop_name FROM `order` o " +
+                "LEFT JOIN user u ON o.user_id = u.id " +
+                "LEFT JOIN shop s ON o.shop_id = s.id WHERE o.status IN (5,6,7)";
+        List<Object> params = new ArrayList<>();
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            String kw = "%" + keyword.trim() + "%";
+            sql += " AND (o.order_no LIKE ? OR u.nickname LIKE ?)";
+            params.add(kw);
+            params.add(kw);
+        }
+        sql += " ORDER BY o.create_time DESC LIMIT ?, 20";
+        params.add((page - 1) * 20);
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            for (int i = 0; i < params.size(); i++) {
+                ps.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("id", rs.getLong("id"));
+                    m.put("orderNo", rs.getString("order_no"));
+                    m.put("buyerName", rs.getString("buyer_name"));
+                    m.put("shopName", rs.getString("shop_name"));
+                    m.put("totalAmount", rs.getBigDecimal("total_amount"));
+                    m.put("payAmount", rs.getBigDecimal("pay_amount"));
+                    m.put("status", rs.getInt("status"));
+                    m.put("createTime", rs.getTimestamp("create_time"));
+                    orders.add(m);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("查询异常订单失败", e);
+        }
+        return orders;
+    }
+
+    public Map<String, Object> getOrderDetailById(Long orderId) {
+        Map<String, Object> o = null;
+        String sql = "SELECT o.*, u.nickname AS buyer_name, u.phone AS buyer_phone, " +
+                "s.shop_name, l.company, l.tracking_no, l.status AS logistics_status " +
+                "FROM `order` o LEFT JOIN user u ON o.user_id = u.id " +
+                "LEFT JOIN shop s ON o.shop_id = s.id " +
+                "LEFT JOIN logistics l ON o.id = l.order_id WHERE o.id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, orderId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    o = new HashMap<>();
+                    o.put("id", rs.getLong("id"));
+                    o.put("orderNo", rs.getString("order_no"));
+                    o.put("buyerName", rs.getString("buyer_name"));
+                    o.put("buyerPhone", rs.getString("buyer_phone"));
+                    o.put("shopName", rs.getString("shop_name"));
+                    o.put("totalAmount", rs.getBigDecimal("total_amount"));
+                    o.put("payAmount", rs.getBigDecimal("pay_amount"));
+                    o.put("status", rs.getInt("status"));
+                    o.put("receiverName", rs.getString("receiver_name"));
+                    o.put("receiverPhone", rs.getString("receiver_phone"));
+                    o.put("receiverAddress", rs.getString("receiver_address"));
+                    o.put("buyerMessage", rs.getString("buyer_message"));
+                    o.put("createTime", rs.getTimestamp("create_time"));
+                    o.put("payTime", rs.getTimestamp("pay_time"));
+                    o.put("shipTime", rs.getTimestamp("ship_time"));
+                    o.put("logisticsCompany", rs.getString("company"));
+                    o.put("trackingNo", rs.getString("tracking_no"));
+                    o.put("logisticsStatus", rs.getInt("logistics_status"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("查询订单详情失败", e);
+        }
+        return o;
+    }
+
+    public List<Map<String, Object>> listOrderItemByOrderId(Long orderId) {
+        List<Map<String, Object>> items = new ArrayList<>();
+        String sql = "SELECT * FROM order_item WHERE order_id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, orderId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> it = new HashMap<>();
+                    it.put("productName", rs.getString("product_name"));
+                    it.put("coverImage", rs.getString("cover_image"));
+                    it.put("price", rs.getBigDecimal("price"));
+                    it.put("quantity", rs.getInt("quantity"));
+                    it.put("subtotal", rs.getBigDecimal("subtotal"));
+                    items.add(it);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("查询订单项失败", e);
+        }
+        return items;
     }
 }

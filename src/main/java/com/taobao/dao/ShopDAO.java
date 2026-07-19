@@ -4,67 +4,47 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.taobao.util.DBUtil;
 
-/**
- * 店铺信息数据访问层
- */
 public class ShopDAO {
 
-    private Connection conn;
-    private PreparedStatement ps;
-    private ResultSet rs;
-
-    /**
-     * 根据用户ID查询店铺信息
-     */
     public Map<String, Object> getShopByUserId(long userId) {
         String sql = "SELECT * FROM shop WHERE user_id = ?";
-        Map<String, Object> shop = null;
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, userId);
-            rs = ps.executeQuery();
-            if (rs.next()) {
-                shop = extractShop(rs);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return extractShop(rs);
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            DBUtil.close(conn, ps, rs);
         }
-        return shop;
+        return null;
     }
 
-    /**
-     * 根据店铺ID查询店铺信息
-     */
     public Map<String, Object> getShopById(long shopId) {
         String sql = "SELECT * FROM shop WHERE id = ?";
-        Map<String, Object> shop = null;
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, shopId);
-            rs = ps.executeQuery();
-            if (rs.next()) {
-                shop = extractShop(rs);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return extractShop(rs);
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            DBUtil.close(conn, ps, rs);
         }
-        return shop;
+        return null;
     }
 
-    /**
-     * 更新店铺信息
-     */
     public boolean updateShop(long userId, String shopName, String description, String avatar) {
         StringBuilder sql = new StringBuilder("UPDATE shop SET update_time = NOW()");
         if (shopName != null) sql.append(", shop_name = ?");
@@ -72,9 +52,8 @@ public class ShopDAO {
         if (avatar != null) sql.append(", avatar = ?");
         sql.append(" WHERE user_id = ?");
 
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql.toString());
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
             int idx = 1;
             if (shopName != null) ps.setString(idx++, shopName);
             if (description != null) ps.setString(idx++, description);
@@ -84,19 +63,13 @@ public class ShopDAO {
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
-        } finally {
-            DBUtil.close(conn, ps);
         }
     }
 
-    /**
-     * 创建店铺（审核通过后）
-     */
     public boolean createShop(long userId, String shopName, String category) {
         String sql = "INSERT INTO shop (user_id, shop_name, shop_category) VALUES (?, ?, ?)";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, userId);
             ps.setString(2, shopName);
             ps.setString(3, category);
@@ -104,97 +77,81 @@ public class ShopDAO {
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
-        } finally {
-            DBUtil.close(conn, ps);
         }
     }
 
-    /**
-     * 获取店铺审核/营业状态（供Filter使用）
-     * 返回值：-2=未开店，-1=关闭，0=待审核，1=营业中
-     */
     public int getShopStatus(long userId) {
-        // 先检查是否在申请表中
-        String applySql = "SELECT status FROM shop_apply WHERE user_id = ? ORDER BY id DESC LIMIT 1";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(applySql);
+        String shopSql = "SELECT status FROM shop WHERE user_id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(shopSql)) {
             ps.setLong(1, userId);
-            rs = ps.executeQuery();
-            if (!rs.next()) {
-                return -2; // 未申请开店
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("status");
+                }
             }
-            int status = rs.getInt("status");
-            rs.close();
-            ps.close();
-            if (status == 0) return 0; // 待审核
-            if (status == 2) return -2; // 拒绝，重新申请
-
-            // 审核通过，查询店铺表
-            String shopSql = "SELECT status FROM shop WHERE user_id = ?";
-            ps = conn.prepareStatement(shopSql);
-            ps.setLong(1, userId);
-            rs = ps.executeQuery();
-            if (rs.next()) {
-                return rs.getInt("status");
-            }
-            return -2;
         } catch (SQLException e) {
             e.printStackTrace();
-            return -2;
-        } finally {
-            DBUtil.close(conn, ps, rs);
         }
+
+        String applySql = "SELECT status FROM shop_apply WHERE user_id = ? ORDER BY id DESC LIMIT 1";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(applySql)) {
+            ps.setLong(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return -2;
+                }
+                int status = rs.getInt("status");
+                if (status == 0) return 0;
+                if (status == 1) return 0;
+                if (status == 2) return -2;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -2;
     }
 
-    /**
-     * 查询入驻申请记录
-     */
     public Map<String, Object> getApplyByUserId(long userId) {
         String sql = "SELECT * FROM shop_apply WHERE user_id = ? ORDER BY id DESC LIMIT 1";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, userId);
-            rs = ps.executeQuery();
-            if (rs.next()) {
-                Map<String, Object> apply = new HashMap<>();
-                apply.put("id", rs.getLong("id"));
-                apply.put("shop_name", rs.getString("shop_name"));
-                apply.put("shop_category", rs.getString("shop_category"));
-                apply.put("description", rs.getString("description"));
-                apply.put("contact_name", rs.getString("contact_name"));
-                apply.put("contact_phone", rs.getString("contact_phone"));
-                apply.put("contact_email", rs.getString("contact_email"));
-                apply.put("id_card", rs.getString("id_card"));
-                apply.put("license_no", rs.getString("license_no"));
-                apply.put("license_img", rs.getString("license_img"));
-                apply.put("status", rs.getInt("status"));
-                apply.put("reject_reason", rs.getString("reject_reason"));
-                apply.put("apply_time", rs.getTimestamp("apply_time"));
-                apply.put("review_time", rs.getTimestamp("review_time"));
-                return apply;
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Map<String, Object> apply = new HashMap<>();
+                    apply.put("id", rs.getLong("id"));
+                    apply.put("shop_name", rs.getString("shop_name"));
+                    apply.put("shop_category", rs.getString("shop_category"));
+                    apply.put("description", rs.getString("description"));
+                    apply.put("contact_name", rs.getString("contact_name"));
+                    apply.put("contact_phone", rs.getString("contact_phone"));
+                    apply.put("contact_email", rs.getString("contact_email"));
+                    apply.put("id_card", rs.getString("id_card"));
+                    apply.put("license_no", rs.getString("license_no"));
+                    apply.put("license_img", rs.getString("license_img"));
+                    apply.put("status", rs.getInt("status"));
+                    apply.put("reject_reason", rs.getString("reject_reason"));
+                    apply.put("apply_time", rs.getTimestamp("apply_time"));
+                    apply.put("review_time", rs.getTimestamp("review_time"));
+                    return apply;
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            DBUtil.close(conn, ps, rs);
         }
         return null;
     }
 
-    /**
-     * 提交入驻申请
-     */
     public boolean submitApply(long userId, String shopName, String category, String description,
                                 String contactName, String contactPhone, String contactEmail,
                                 String idCard, String licenseNo, String licenseImg) {
         String sql = "INSERT INTO shop_apply (user_id, shop_name, shop_category, description, " +
                      "contact_name, contact_phone, contact_email, id_card, license_no, license_img) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, userId);
             ps.setString(2, shopName);
             ps.setString(3, category);
@@ -209,85 +166,82 @@ public class ShopDAO {
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
-        } finally {
-            DBUtil.close(conn, ps);
         }
     }
 
-    /**
-     * 审核入驻申请（管理员调用）
-     */
     public boolean reviewApply(long applyId, int status, String rejectReason) {
         String sql = "UPDATE shop_apply SET status = ?, reject_reason = ?, review_time = NOW() WHERE id = ?";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
-            ps.setInt(1, status);
-            ps.setString(2, rejectReason);
-            ps.setLong(3, applyId);
-            boolean ok = ps.executeUpdate() > 0;
-            ps.close();
+        try (Connection conn = DBUtil.getConnection()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, status);
+                ps.setString(2, rejectReason);
+                ps.setLong(3, applyId);
+                boolean ok = ps.executeUpdate() > 0;
 
-            // 如果审核通过，创建店铺记录
-            if (ok && status == 1) {
-                // 从申请记录获取店铺信息
-                String selectSql = "SELECT user_id, shop_name, shop_category FROM shop_apply WHERE id = ?";
-                ps = conn.prepareStatement(selectSql);
-                ps.setLong(1, applyId);
-                rs = ps.executeQuery();
-                if (rs.next()) {
-                    long userId = rs.getLong("user_id");
-                    String shopName = rs.getString("shop_name");
-                    String category = rs.getString("shop_category");
-                    rs.close();
-                    ps.close();
-                    createShop(userId, shopName, category);
+                if (ok && status == 1) {
+                    String selectSql = "SELECT user_id, shop_name, shop_category FROM shop_apply WHERE id = ?";
+                    try (PreparedStatement ps2 = conn.prepareStatement(selectSql)) {
+                        ps2.setLong(1, applyId);
+                        try (ResultSet rs = ps2.executeQuery()) {
+                            if (rs.next()) {
+                                long userId = rs.getLong("user_id");
+                                String shopName = rs.getString("shop_name");
+                                String category = rs.getString("shop_category");
+                                createShop(conn, userId, shopName, category);
+                            }
+                        }
+                    }
                 }
+                conn.commit();
+                return ok;
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
             }
-            return ok;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
-        } finally {
-            DBUtil.close(conn, ps, rs);
         }
     }
 
-    /**
-     * 获取店铺统计数据
-     */
+    private boolean createShop(Connection conn, long userId, String shopName, String category) throws SQLException {
+        String sql = "INSERT INTO shop (user_id, shop_name, shop_category) VALUES (?, ?, ?)";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, userId);
+            ps.setString(2, shopName);
+            ps.setString(3, category);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
     public Map<String, Object> getShopStats(long shopId) {
         String sql = "SELECT s.total_orders, s.total_sales, s.rating, " +
                      "(SELECT COUNT(*) FROM product WHERE shop_id = ? AND status = 1) as onSaleCount, " +
                      "(SELECT COUNT(*) FROM product WHERE shop_id = ?) as totalProductCount " +
                      "FROM shop s WHERE s.id = ?";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, shopId);
             ps.setLong(2, shopId);
             ps.setLong(3, shopId);
-            rs = ps.executeQuery();
-            if (rs.next()) {
-                Map<String, Object> stats = new HashMap<>();
-                stats.put("totalOrders", rs.getInt("total_orders"));
-                stats.put("totalSales", rs.getDouble("total_sales"));
-                stats.put("rating", rs.getDouble("rating"));
-                stats.put("onSaleCount", rs.getInt("onSaleCount"));
-                stats.put("totalProductCount", rs.getInt("totalProductCount"));
-                return stats;
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Map<String, Object> stats = new HashMap<>();
+                    stats.put("totalOrders", rs.getInt("total_orders"));
+                    stats.put("totalSales", rs.getDouble("total_sales"));
+                    stats.put("rating", rs.getDouble("rating"));
+                    stats.put("onSaleCount", rs.getInt("onSaleCount"));
+                    stats.put("totalProductCount", rs.getInt("totalProductCount"));
+                    return stats;
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            DBUtil.close(conn, ps, rs);
         }
         return null;
     }
 
-    /**
-     * 从ResultSet提取店铺信息
-     */
     private Map<String, Object> extractShop(ResultSet rs) throws SQLException {
         Map<String, Object> shop = new HashMap<>();
         shop.put("id", rs.getLong("id"));
@@ -305,7 +259,214 @@ public class ShopDAO {
         return shop;
     }
 
-    public void close() {
-        DBUtil.close(conn, ps, rs);
+    public List<Map<String, Object>> listPendingShopApply() {
+        List<Map<String, Object>> applies = new ArrayList<>();
+        String sql = "SELECT sa.*, u.username, u.nickname FROM shop_apply sa " +
+                "LEFT JOIN user u ON sa.user_id = u.id " +
+                "WHERE sa.status = 0 ORDER BY sa.apply_time DESC";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                Map<String, Object> m = new HashMap<>();
+                m.put("id", rs.getLong("id"));
+                m.put("userId", rs.getLong("user_id"));
+                m.put("shopName", rs.getString("shop_name"));
+                m.put("shopCategory", rs.getString("shop_category"));
+                m.put("description", rs.getString("description"));
+                m.put("contactName", rs.getString("contact_name"));
+                m.put("contactPhone", rs.getString("contact_phone"));
+                m.put("contactEmail", rs.getString("contact_email"));
+                m.put("licenseNo", rs.getString("license_no"));
+                m.put("applyTime", rs.getTimestamp("apply_time"));
+                m.put("nickname", rs.getString("nickname"));
+                applies.add(m);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("查询待审核商家申请失败", e);
+        }
+        return applies;
+    }
+
+    public List<Map<String, Object>> listAllShop() {
+        List<Map<String, Object>> shops = new ArrayList<>();
+        String sql = "SELECT s.*, u.nickname AS owner_name FROM shop s " +
+                "LEFT JOIN user u ON s.user_id = u.id ORDER BY s.id DESC";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                Map<String, Object> m = new HashMap<>();
+                m.put("id", rs.getLong("id"));
+                m.put("shopName", rs.getString("shop_name"));
+                m.put("shopCategory", rs.getString("shop_category"));
+                m.put("description", rs.getString("description"));
+                m.put("status", rs.getInt("status"));
+                m.put("rating", rs.getBigDecimal("rating"));
+                m.put("totalOrders", rs.getInt("total_orders"));
+                m.put("totalSales", rs.getBigDecimal("total_sales"));
+                m.put("ownerName", rs.getString("owner_name"));
+                m.put("createTime", rs.getTimestamp("create_time"));
+                shops.add(m);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("查询全部店铺列表失败", e);
+        }
+        return shops;
+    }
+
+    public void approveShopApply(Long applyId, Long operatorId) {
+        try (Connection conn = DBUtil.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                String selectSql = "SELECT * FROM shop_apply WHERE id = ?";
+                try (PreparedStatement ps1 = conn.prepareStatement(selectSql)) {
+                    ps1.setLong(1, applyId);
+                    try (ResultSet rs = ps1.executeQuery()) {
+                        if (rs.next()) {
+                            long userId = rs.getLong("user_id");
+                            String shopName = rs.getString("shop_name");
+                            String category = rs.getString("shop_category");
+                            String desc = rs.getString("description");
+
+                            String insertShop = "INSERT INTO shop (user_id, shop_name, shop_category, description, status, rating, total_orders, total_sales, create_time) " +
+                                    "VALUES (?, ?, ?, ?, 1, 5.0, 0, 0.00, NOW())";
+                            try (PreparedStatement ps2 = conn.prepareStatement(insertShop)) {
+                                ps2.setLong(1, userId);
+                                ps2.setString(2, shopName);
+                                ps2.setString(3, category);
+                                ps2.setString(4, desc);
+                                ps2.executeUpdate();
+                            }
+
+                            String updateApply = "UPDATE shop_apply SET status = 1, review_time = NOW(), reviewer_id = ? WHERE id = ?";
+                            try (PreparedStatement ps3 = conn.prepareStatement(updateApply)) {
+                                ps3.setLong(1, operatorId);
+                                ps3.setLong(2, applyId);
+                                ps3.executeUpdate();
+                            }
+
+                            String updateRole = "UPDATE user SET role = 'shopkeeper' WHERE id = ?";
+                            try (PreparedStatement ps4 = conn.prepareStatement(updateRole)) {
+                                ps4.setLong(1, userId);
+                                ps4.executeUpdate();
+                            }
+                        }
+                    }
+                }
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("审核通过店铺申请失败", e);
+        }
+    }
+
+    public void rejectShopApply(Long applyId, String rejectReason, Long operatorId) {
+        String sql = "UPDATE shop_apply SET status = 2, reject_reason = ?, review_time = NOW(), reviewer_id = ? WHERE id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, rejectReason);
+            ps.setLong(2, operatorId);
+            ps.setLong(3, applyId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("驳回店铺申请失败", e);
+        }
+    }
+
+    public void closeShop(Long shopId) {
+        try (Connection conn = DBUtil.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                String updateShop = "UPDATE shop SET status = -1 WHERE id = ?";
+                try (PreparedStatement ps1 = conn.prepareStatement(updateShop)) {
+                    ps1.setLong(1, shopId);
+                    ps1.executeUpdate();
+                }
+
+                String updateProduct = "UPDATE product SET status = 2 WHERE shop_id = ?";
+                try (PreparedStatement ps2 = conn.prepareStatement(updateProduct)) {
+                    ps2.setLong(1, shopId);
+                    ps2.executeUpdate();
+                }
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("关闭店铺失败", e);
+        }
+    }
+
+    public String getShopNameByOwnerId(Long ownerId) {
+        String sql = "SELECT shop_name FROM shop WHERE user_id = ? AND status = 1";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, ownerId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("shop_name");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("查询店铺名称失败", e);
+        }
+        return "";
+    }
+
+    public boolean hasShop(Long userId) {
+        String sql = "SELECT id FROM shop WHERE user_id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("查询店铺失败", e);
+        }
+    }
+
+    public boolean hasPendingApply(Long userId) {
+        String sql = "SELECT id FROM shop_apply WHERE user_id = ? AND status = 0";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("查询申请状态失败", e);
+        }
+    }
+
+    public void submitShopApply(Long userId, String shopName, String shopCategory, String description,
+                                  String contactName, String contactPhone) {
+        String sql = "INSERT INTO shop_apply (user_id, shop_name, shop_category, description, contact_name, contact_phone, status) VALUES (?, ?, ?, ?, ?, ?, 0)";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, userId);
+            ps.setString(2, shopName);
+            ps.setString(3, shopCategory);
+            ps.setString(4, description);
+            ps.setString(5, contactName);
+            ps.setString(6, contactPhone);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("提交店铺申请失败", e);
+        }
     }
 }

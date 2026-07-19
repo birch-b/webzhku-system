@@ -53,8 +53,13 @@ public class AuthFilter implements Filter {
             return;
         }
 
-        // ============ 商家开店申请页面放行 ============
+        // ============ 商家开店申请页面：需要登录 ============
         if (path.equals("/shop/apply") || path.startsWith("/shop/apply")) {
+            boolean isLoggedIn = (session != null && session.getAttribute("userId") != null);
+            if (!isLoggedIn) {
+                resp.sendRedirect(contextPath + "/login");
+                return;
+            }
             chain.doFilter(request, response);
             return;
         }
@@ -130,10 +135,6 @@ public class AuthFilter implements Filter {
                 || path.startsWith("/product/")
                 || path.startsWith("/announcement/")
                 || path.startsWith("/category/")
-                || path.equals("/shop/home") || path.startsWith("/shop/product/")
-                || path.startsWith("/shop/info/")
-                || path.startsWith("/shop/category/")
-                || path.startsWith("/shop/review/")
                 || path.startsWith("/checkout");
     }
 

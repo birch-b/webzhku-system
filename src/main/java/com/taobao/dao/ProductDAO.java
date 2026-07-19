@@ -13,18 +13,8 @@ import org.json.JSONArray;
 
 import com.taobao.util.DBUtil;
 
-/**
- * 商品数据访问层
- */
 public class ProductDAO {
 
-    private Connection conn;
-    private PreparedStatement ps;
-    private ResultSet rs;
-
-    /**
-     * 分页查询店铺商品列表
-     */
     public List<Map<String, Object>> getProductsByShopId(long shopId, int status, int page, int pageSize) {
         List<Map<String, Object>> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder("SELECT p.*, c.name as category_name FROM product p ");
@@ -33,83 +23,67 @@ public class ProductDAO {
         if (status >= 0) sql.append("AND p.status = ? ");
         sql.append("ORDER BY p.update_time DESC LIMIT ? OFFSET ?");
 
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql.toString());
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
             int idx = 1;
             ps.setLong(idx++, shopId);
             if (status >= 0) ps.setInt(idx++, status);
             ps.setInt(idx++, pageSize);
             ps.setInt(idx++, (page - 1) * pageSize);
-            rs = ps.executeQuery();
-            while (rs.next()) {
-                Map<String, Object> p = extractProduct(rs);
-                list.add(p);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> p = extractProduct(rs);
+                    list.add(p);
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            DBUtil.close(conn, ps, rs);
         }
         return list;
     }
 
-    /**
-     * 查询商品总数
-     */
     public int getProductCount(long shopId, int status) {
         String sql = status >= 0
             ? "SELECT COUNT(*) FROM product WHERE shop_id = ? AND status = ?"
             : "SELECT COUNT(*) FROM product WHERE shop_id = ?";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, shopId);
             if (status >= 0) ps.setInt(2, status);
-            rs = ps.executeQuery();
-            if (rs.next()) return rs.getInt(1);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            DBUtil.close(conn, ps, rs);
         }
         return 0;
     }
 
-    /**
-     * 根据ID查询商品
-     */
     public Map<String, Object> getProductById(long id) {
         String sql = "SELECT p.*, c.name as category_name FROM product p " +
                      "LEFT JOIN category c ON p.category_id = c.id WHERE p.id = ?";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, id);
-            rs = ps.executeQuery();
-            if (rs.next()) {
-                return extractProduct(rs);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return extractProduct(rs);
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            DBUtil.close(conn, ps, rs);
         }
         return null;
     }
 
-    /**
-     * 新增商品（待上架）
-     */
     public long addProduct(long shopId, long categoryId, String name, String subtitle,
                            String description, double price, double originalPrice, int stock,
                            String images, String coverImage) {
         String sql = "INSERT INTO product (shop_id, category_id, name, subtitle, description, " +
                      "price, original_price, stock, images, cover_image, status) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
             ps.setLong(1, shopId);
             if (categoryId > 0) ps.setLong(2, categoryId); else ps.setNull(2, java.sql.Types.BIGINT);
             ps.setString(3, name);
@@ -122,29 +96,24 @@ public class ProductDAO {
             ps.setString(10, coverImage);
             int rows = ps.executeUpdate();
             if (rows > 0) {
-                rs = ps.getGeneratedKeys();
-                if (rs.next()) return rs.getLong(1);
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) return rs.getLong(1);
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            DBUtil.close(conn, ps, rs);
         }
         return -1;
     }
 
-    /**
-     * 更新商品信息
-     */
     public boolean updateProduct(long id, long categoryId, String name, String subtitle,
                                   String description, double price, double originalPrice,
                                   String images, String coverImage) {
         String sql = "UPDATE product SET category_id = ?, name = ?, subtitle = ?, description = ?, " +
                      "price = ?, original_price = ?, images = ?, cover_image = ?, update_time = NOW() " +
                      "WHERE id = ?";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             int idx = 1;
             if (categoryId > 0) ps.setLong(idx++, categoryId); else ps.setNull(idx++, java.sql.Types.BIGINT);
             ps.setString(idx++, name);
@@ -159,19 +128,13 @@ public class ProductDAO {
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
-        } finally {
-            DBUtil.close(conn, ps);
         }
     }
 
-    /**
-     * 调整库存
-     */
     public boolean adjustStock(long id, int delta) {
         String sql = "UPDATE product SET stock = stock + ?, update_time = NOW() WHERE id = ? AND (stock + ?) >= 0";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, delta);
             ps.setLong(2, id);
             ps.setInt(3, delta);
@@ -179,73 +142,49 @@ public class ProductDAO {
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
-        } finally {
-            DBUtil.close(conn, ps);
         }
     }
 
-    /**
-     * 上架商品
-     */
     public boolean publishProduct(long id) {
         String sql = "UPDATE product SET status = 1, publish_time = NOW(), update_time = NOW() WHERE id = ? AND status = 0";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
-        } finally {
-            DBUtil.close(conn, ps);
         }
     }
 
-    /**
-     * 下架商品
-     */
     public boolean unpublishProduct(long id) {
         String sql = "UPDATE product SET status = 2, update_time = NOW() WHERE id = ? AND status IN (1,3)";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
-        } finally {
-            DBUtil.close(conn, ps);
         }
     }
 
-    /**
-     * 删除商品（物理删除）
-     */
     public boolean deleteProduct(long id) {
         String sql = "DELETE FROM product WHERE id = ?";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
-        } finally {
-            DBUtil.close(conn, ps);
         }
     }
 
-    /**
-     * 更新商品多图
-     */
     public boolean updateImages(long id, String images, String coverImage) {
         String sql = "UPDATE product SET images = ?, cover_image = ?, update_time = NOW() WHERE id = ?";
-        try {
-            conn = DBUtil.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, images);
             ps.setString(2, coverImage);
             ps.setLong(3, id);
@@ -253,14 +192,9 @@ public class ProductDAO {
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
-        } finally {
-            DBUtil.close(conn, ps);
         }
     }
 
-    /**
-     * 从ResultSet提取商品信息
-     */
     private Map<String, Object> extractProduct(ResultSet rs) throws SQLException {
         Map<String, Object> p = new HashMap<>();
         p.put("id", rs.getLong("id"));
@@ -281,7 +215,6 @@ public class ProductDAO {
         p.put("create_time", rs.getTimestamp("create_time"));
         p.put("update_time", rs.getTimestamp("update_time"));
         p.put("publish_time", rs.getTimestamp("publish_time"));
-        // 解析images为List
         try {
             String imagesStr = rs.getString("images");
             if (imagesStr != null && !imagesStr.isEmpty()) {
@@ -298,7 +231,43 @@ public class ProductDAO {
         return p;
     }
 
-    public void close() {
-        DBUtil.close(conn, ps, rs);
+    public List<Map<String, Object>> listByCategory(String categoryName) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT p.id, p.name, p.price, p.cover_image AS main_image, p.sales, s.shop_name ");
+        sql.append("FROM product p LEFT JOIN shop s ON p.shop_id = s.id ");
+        sql.append("LEFT JOIN category c ON p.category_id = c.id ");
+        sql.append("LEFT JOIN category pc ON c.parent_id = pc.id ");
+        sql.append("WHERE p.status = 1 ");
+
+        boolean hasCat = categoryName != null && !categoryName.isEmpty();
+        if (hasCat) {
+            sql.append("AND (c.name = ? OR pc.name = ?) ");
+        }
+        sql.append("ORDER BY p.sales DESC LIMIT 12");
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            if (hasCat) {
+                ps.setString(1, categoryName);
+                ps.setString(2, categoryName);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> prod = new HashMap<>();
+                    prod.put("id", rs.getLong("id"));
+                    prod.put("name", rs.getString("name"));
+                    prod.put("price", rs.getBigDecimal("price"));
+                    prod.put("main_image", rs.getString("main_image"));
+                    prod.put("sales", rs.getInt("sales"));
+                    prod.put("shop_name", rs.getString("shop_name"));
+                    list.add(prod);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("查询商品列表失败", e);
+        }
+        return list;
     }
 }

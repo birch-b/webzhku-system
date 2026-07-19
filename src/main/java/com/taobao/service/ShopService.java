@@ -24,4 +24,17 @@ public interface ShopService {
 
     // 根据店主ID获取店铺名称
     String getShopNameByOwnerId(Long ownerId);
+
+    // 检查用户是否已有店铺
+    boolean hasShop(Long userId);
+
+    // 检查用户是否有审核中的申请
+    boolean hasPendingApply(Long userId);
+
+    // 提交店铺申请
+    void submitShopApply(Long userId, String shopName, String shopCategory, String description,
+                          String contactName, String contactPhone);
+
+    // 获取用户的申请信息
+    Map<String, Object> getApplyByUserId(Long userId);
 }

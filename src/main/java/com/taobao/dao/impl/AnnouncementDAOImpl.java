@@ -50,16 +50,17 @@ public class AnnouncementDAOImpl implements AnnouncementDAO {
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, id);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                ann = new Announcement();
-                ann.setId(rs.getLong("id"));
-                ann.setTitle(rs.getString("title"));
-                ann.setContent(rs.getString("content"));
-                ann.setPriority(rs.getInt("priority"));
-                ann.setStatus(rs.getInt("status"));
-                ann.setCreateTime(rs.getTimestamp("create_time"));
-                ann.setPublishedAt(rs.getTimestamp("published_at"));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    ann = new Announcement();
+                    ann.setId(rs.getLong("id"));
+                    ann.setTitle(rs.getString("title"));
+                    ann.setContent(rs.getString("content"));
+                    ann.setPriority(rs.getInt("priority"));
+                    ann.setStatus(rs.getInt("status"));
+                    ann.setCreateTime(rs.getTimestamp("create_time"));
+                    ann.setPublishedAt(rs.getTimestamp("published_at"));
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -102,13 +103,14 @@ public class AnnouncementDAOImpl implements AnnouncementDAO {
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, id);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                map = new HashMap<>();
-                map.put("id", rs.getLong("id"));
-                map.put("title", rs.getString("title"));
-                map.put("content", rs.getString("content"));
-                map.put("priority", rs.getInt("priority"));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    map = new HashMap<>();
+                    map.put("id", rs.getLong("id"));
+                    map.put("title", rs.getString("title"));
+                    map.put("content", rs.getString("content"));
+                    map.put("priority", rs.getInt("priority"));
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -122,21 +124,23 @@ public class AnnouncementDAOImpl implements AnnouncementDAO {
         try (Connection conn = DBUtil.getConnection()) {
             if (id != null) {
                 String updateSql = "UPDATE announcement SET title = ?, content = ?, priority = ?, update_time = NOW() WHERE id = ?";
-                PreparedStatement ps = conn.prepareStatement(updateSql);
-                ps.setString(1, title);
-                ps.setString(2, content);
-                ps.setInt(3, priority);
-                ps.setLong(4, id);
-                ps.executeUpdate();
+                try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
+                    ps.setString(1, title);
+                    ps.setString(2, content);
+                    ps.setInt(3, priority);
+                    ps.setLong(4, id);
+                    ps.executeUpdate();
+                }
             } else {
                 String insertSql = "INSERT INTO announcement (title, content, operator_id, priority, status, create_time, update_time, published_at) " +
                         "VALUES (?, ?, ?, ?, 1, NOW(), NOW(), NOW())";
-                PreparedStatement ps = conn.prepareStatement(insertSql);
-                ps.setString(1, title);
-                ps.setString(2, content);
-                ps.setLong(3, operatorId);
-                ps.setInt(4, priority);
-                ps.executeUpdate();
+                try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
+                    ps.setString(1, title);
+                    ps.setString(2, content);
+                    ps.setLong(3, operatorId);
+                    ps.setInt(4, priority);
+                    ps.executeUpdate();
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();

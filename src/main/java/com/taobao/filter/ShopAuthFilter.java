@@ -35,16 +35,26 @@ public class ShopAuthFilter implements Filter {
         String contextPath = request.getContextPath();
         String path = requestURI.substring(contextPath.length());
         
-        if (requestURI.endsWith("shop_auditing.jsp") || requestURI.endsWith("shop_closed.jsp")
-                || path.equals("/shop/apply") || path.startsWith("/shop/apply/")
-                || requestURI.endsWith("shop_apply.jsp")) {
+        if (requestURI.endsWith("shop_auditing.jsp") || requestURI.endsWith("shop_closed.jsp")) {
             chain.doFilter(req, resp);
             return;
         }
 
         Long userId = (Long) session.getAttribute("userId");
         if (userId == null) {
-            response.sendRedirect(request.getContextPath() + "/login.jsp");
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+
+        if (path.equals("/shop/apply") || path.startsWith("/shop/apply/")
+                || requestURI.endsWith("shop_apply.jsp")) {
+            ShopDAO shopDAO = new ShopDAO();
+            int shopStatus = shopDAO.getShopStatus(userId);
+            if (shopStatus == 1) {
+                response.sendRedirect(request.getContextPath() + "/shop/info/view");
+                return;
+            }
+            chain.doFilter(req, resp);
             return;
         }
 
@@ -52,20 +62,17 @@ public class ShopAuthFilter implements Filter {
         int shopStatus = shopDAO.getShopStatus(userId);
 
         if (shopStatus == -2) {
-            shopDAO.close();
             response.sendRedirect(request.getContextPath() + "/shop/shop_apply.jsp");
             return;
         }
 
         if (shopStatus == 0) {
-            shopDAO.close();
             request.setAttribute("msg", "您的店铺正在审核中，请耐心等待！");
             request.getRequestDispatcher("/shop/shop_auditing.jsp").forward(request, response);
             return;
         }
 
         if (shopStatus == -1) {
-            shopDAO.close();
             request.setAttribute("msg", "您的店铺已被关闭，请联系平台管理员！");
             request.getRequestDispatcher("/shop/shop_closed.jsp").forward(request, response);
             return;
@@ -82,7 +89,6 @@ public class ShopAuthFilter implements Filter {
                 session.setAttribute("shopAvatar", shop.get("avatar"));
             }
         }
-        shopDAO.close();
 
         chain.doFilter(req, resp);
     }

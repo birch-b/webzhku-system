@@ -3,6 +3,7 @@ package com.taobao.dao.impl;
 import com.taobao.dao.UserDAO;
 import com.taobao.entity.User;
 import com.taobao.util.DBUtil;
+import com.taobao.util.MD5Util;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -15,24 +16,27 @@ import java.util.Map;
 
 public class UserDAOImpl implements UserDAO {
     @Override
-    public User login(String username, String md5Pwd) {
+    public User login(String username, String rawPwd) {
         User user = null;
-        String sql = "SELECT * FROM user WHERE username = ? AND password = ?";
+        String sql = "SELECT * FROM user WHERE username = ?";
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, username);
-            ps.setString(2, md5Pwd);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                user = new User();
-                user.setId(rs.getLong("id"));
-                user.setUsername(rs.getString("username"));
-                user.setNickname(rs.getString("nickname"));
-                user.setRole(rs.getString("role"));
-                user.setAvatar(rs.getString("avatar"));
-                user.setEmail(rs.getString("email"));
-                user.setPhone(rs.getString("phone"));
-                user.setStatus(rs.getInt("status"));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String storedPwd = rs.getString("password");
+                    if (MD5Util.verify(rawPwd, storedPwd)) {
+                        user = new User();
+                        user.setId(rs.getLong("id"));
+                        user.setUsername(rs.getString("username"));
+                        user.setNickname(rs.getString("nickname"));
+                        user.setRole(rs.getString("role"));
+                        user.setAvatar(rs.getString("avatar"));
+                        user.setEmail(rs.getString("email"));
+                        user.setPhone(rs.getString("phone"));
+                        user.setStatus(rs.getInt("status"));
+                    }
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();

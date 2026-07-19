@@ -13,8 +13,8 @@ public class StatDAOImpl implements StatDAO {
     @Override
     public int getTotalUsers() {
         try (Connection conn = DBUtil.getConnection();
-             Statement st = conn.createStatement();
-             ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM user")) {
+             PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM user");
+             ResultSet rs = ps.executeQuery()) {
             rs.next();
             return rs.getInt(1);
         } catch (SQLException e) {
@@ -26,8 +26,8 @@ public class StatDAOImpl implements StatDAO {
     @Override
     public int getActiveShops() {
         try (Connection conn = DBUtil.getConnection();
-             Statement st = conn.createStatement();
-             ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM shop WHERE status = 1")) {
+             PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM shop WHERE status = 1");
+             ResultSet rs = ps.executeQuery()) {
             rs.next();
             return rs.getInt(1);
         } catch (SQLException e) {
@@ -39,8 +39,8 @@ public class StatDAOImpl implements StatDAO {
     @Override
     public int getActiveProducts() {
         try (Connection conn = DBUtil.getConnection();
-             Statement st = conn.createStatement();
-             ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM product WHERE status = 1")) {
+             PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM product WHERE status = 1");
+             ResultSet rs = ps.executeQuery()) {
             rs.next();
             return rs.getInt(1);
         } catch (SQLException e) {
@@ -52,8 +52,8 @@ public class StatDAOImpl implements StatDAO {
     @Override
     public int getTotalOrders() {
         try (Connection conn = DBUtil.getConnection();
-             Statement st = conn.createStatement();
-             ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM `order`")) {
+             PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM `order`");
+             ResultSet rs = ps.executeQuery()) {
             rs.next();
             return rs.getInt(1);
         } catch (SQLException e) {
@@ -65,8 +65,8 @@ public class StatDAOImpl implements StatDAO {
     @Override
     public double getTotalRevenue() {
         try (Connection conn = DBUtil.getConnection();
-             Statement st = conn.createStatement();
-             ResultSet rs = st.executeQuery("SELECT SUM(pay_amount) FROM `order` WHERE status >= 1")) {
+             PreparedStatement ps = conn.prepareStatement("SELECT SUM(pay_amount) FROM `order` WHERE status >= 1");
+             ResultSet rs = ps.executeQuery()) {
             rs.next();
             return rs.getDouble(1);
         } catch (SQLException e) {

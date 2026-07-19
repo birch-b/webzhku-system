@@ -39,12 +39,9 @@ public class LoginServlet extends HttpServlet {
             return;
         }
 
-        // 密码加密
-        String md5Password = MD5Util.encrypt(password);
         User loginUser;
         try {
-            // 2. 调用业务层查询用户
-            loginUser = userService.login(username, md5Password);
+            loginUser = userService.login(username, password);
         } catch (RuntimeException e) {
             req.setAttribute("error", "系统错误，请稍后重试");
             req.getRequestDispatcher("/login.jsp").forward(req, resp);

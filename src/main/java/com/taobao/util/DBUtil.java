@@ -24,19 +24,10 @@ public class DBUtil {
             Properties props = new Properties();
             InputStream is = DBUtil.class.getClassLoader().getResourceAsStream("db.properties");
             if (is == null) {
-                // 如果没有配置文件，使用默认配置
-                props.setProperty("driverClassName", "com.mysql.cj.jdbc.Driver");
-                props.setProperty("url", "jdbc:mysql://localhost:3306/taobao_shop?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=UTF-8");
-                props.setProperty("username", "root");
-                props.setProperty("password", "root");
-                props.setProperty("initialSize", "5");
-                props.setProperty("maxActive", "20");
-                props.setProperty("minIdle", "5");
-                props.setProperty("maxWait", "60000");
-            } else {
-                props.load(is);
-                is.close();
+                throw new RuntimeException("数据库配置文件 db.properties 不存在，请在 src/main/resources 目录下创建该文件");
             }
+            props.load(is);
+            is.close();
             dataSource = (DruidDataSource) DruidDataSourceFactory.createDataSource(props);
         } catch (Exception e) {
             e.printStackTrace();

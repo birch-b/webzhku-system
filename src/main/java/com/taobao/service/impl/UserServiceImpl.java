@@ -13,8 +13,8 @@ public class UserServiceImpl implements UserService {
     private UserDAO userDAO = new UserDAOImpl();
 
     @Override
-    public User login(String username, String md5Pwd) {
-        return userDAO.login(username, md5Pwd);
+    public User login(String username, String rawPwd) {
+        return userDAO.login(username, rawPwd);
     }
 
     @Override

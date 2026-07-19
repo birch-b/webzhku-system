@@ -26,21 +26,22 @@ public class AftersaleDAOImpl implements AftersaleDAO {
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, userId);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                Map<String, Object> aftersale = new HashMap<>();
-                aftersale.put("id", rs.getLong("id"));
-                aftersale.put("orderId", rs.getLong("order_id"));
-                aftersale.put("orderNo", rs.getString("order_no"));
-                aftersale.put("shopName", rs.getString("shop_name"));
-                aftersale.put("type", rs.getInt("type"));
-                aftersale.put("reason", rs.getString("reason"));
-                aftersale.put("amount", rs.getBigDecimal("amount"));
-                aftersale.put("status", rs.getInt("status"));
-                aftersale.put("shopReply", rs.getString("shop_reply"));
-                aftersale.put("createTime", rs.getTimestamp("create_time"));
-                aftersale.put("handleTime", rs.getTimestamp("handle_time"));
-                list.add(aftersale);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> aftersale = new HashMap<>();
+                    aftersale.put("id", rs.getLong("id"));
+                    aftersale.put("orderId", rs.getLong("order_id"));
+                    aftersale.put("orderNo", rs.getString("order_no"));
+                    aftersale.put("shopName", rs.getString("shop_name"));
+                    aftersale.put("type", rs.getInt("type"));
+                    aftersale.put("reason", rs.getString("reason"));
+                    aftersale.put("amount", rs.getBigDecimal("amount"));
+                    aftersale.put("status", rs.getInt("status"));
+                    aftersale.put("shopReply", rs.getString("shop_reply"));
+                    aftersale.put("createTime", rs.getTimestamp("create_time"));
+                    aftersale.put("handleTime", rs.getTimestamp("handle_time"));
+                    list.add(aftersale);
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -59,19 +60,20 @@ public class AftersaleDAOImpl implements AftersaleDAO {
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, orderId);
             ps.setLong(2, userId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                int status = rs.getInt("status");
-                if (status < 3 || status == 5 || status == 7) {
-                    throw new RuntimeException("该订单不支持售后申请");
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    int status = rs.getInt("status");
+                    if (status < 3 || status == 5 || status == 7) {
+                        throw new RuntimeException("该订单不支持售后申请");
+                    }
+                    data = new HashMap<>();
+                    data.put("orderId", orderId);
+                    data.put("orderNo", rs.getString("order_no"));
+                    data.put("shopName", rs.getString("shop_name"));
+                    data.put("payAmount", rs.getBigDecimal("pay_amount"));
+                } else {
+                    throw new RuntimeException("订单不存在");
                 }
-                data = new HashMap<>();
-                data.put("orderId", orderId);
-                data.put("orderNo", rs.getString("order_no"));
-                data.put("shopName", rs.getString("shop_name"));
-                data.put("payAmount", rs.getBigDecimal("pay_amount"));
-            } else {
-                throw new RuntimeException("订单不存在");
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -87,18 +89,20 @@ public class AftersaleDAOImpl implements AftersaleDAO {
             try {
                 String insertSql = "INSERT INTO aftersale (order_id, user_id, type, reason, amount, status, create_time) " +
                         "VALUES (?, ?, ?, ?, ?, 0, NOW())";
-                PreparedStatement ps = conn.prepareStatement(insertSql);
-                ps.setLong(1, orderId);
-                ps.setLong(2, userId);
-                ps.setInt(3, type);
-                ps.setString(4, reason);
-                ps.setBigDecimal(5, amount);
-                ps.executeUpdate();
+                try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
+                    ps.setLong(1, orderId);
+                    ps.setLong(2, userId);
+                    ps.setInt(3, type);
+                    ps.setString(4, reason);
+                    ps.setBigDecimal(5, amount);
+                    ps.executeUpdate();
+                }
 
                 String updateOrderSql = "UPDATE `order` SET status = 6 WHERE id = ?";
-                PreparedStatement ps2 = conn.prepareStatement(updateOrderSql);
-                ps2.setLong(1, orderId);
-                ps2.executeUpdate();
+                try (PreparedStatement ps2 = conn.prepareStatement(updateOrderSql)) {
+                    ps2.setLong(1, orderId);
+                    ps2.executeUpdate();
+                }
 
                 conn.commit();
             } catch (Exception e) {
@@ -123,23 +127,24 @@ public class AftersaleDAOImpl implements AftersaleDAO {
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, aftersaleId);
             ps.setLong(2, userId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                aftersale = new HashMap<>();
-                aftersale.put("id", rs.getLong("id"));
-                aftersale.put("orderId", rs.getLong("order_id"));
-                aftersale.put("orderNo", rs.getString("order_no"));
-                aftersale.put("shopName", rs.getString("shop_name"));
-                aftersale.put("type", rs.getInt("type"));
-                aftersale.put("reason", rs.getString("reason"));
-                aftersale.put("description", rs.getString("description"));
-                aftersale.put("amount", rs.getBigDecimal("amount"));
-                aftersale.put("status", rs.getInt("status"));
-                aftersale.put("shopReply", rs.getString("shop_reply"));
-                aftersale.put("createTime", rs.getTimestamp("create_time"));
-                aftersale.put("handleTime", rs.getTimestamp("handle_time"));
-            } else {
-                throw new RuntimeException("售后记录不存在");
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    aftersale = new HashMap<>();
+                    aftersale.put("id", rs.getLong("id"));
+                    aftersale.put("orderId", rs.getLong("order_id"));
+                    aftersale.put("orderNo", rs.getString("order_no"));
+                    aftersale.put("shopName", rs.getString("shop_name"));
+                    aftersale.put("type", rs.getInt("type"));
+                    aftersale.put("reason", rs.getString("reason"));
+                    aftersale.put("description", rs.getString("description"));
+                    aftersale.put("amount", rs.getBigDecimal("amount"));
+                    aftersale.put("status", rs.getInt("status"));
+                    aftersale.put("shopReply", rs.getString("shop_reply"));
+                    aftersale.put("createTime", rs.getTimestamp("create_time"));
+                    aftersale.put("handleTime", rs.getTimestamp("handle_time"));
+                } else {
+                    throw new RuntimeException("售后记录不存在");
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
